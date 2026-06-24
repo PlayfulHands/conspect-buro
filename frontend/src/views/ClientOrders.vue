@@ -95,6 +95,9 @@
 <script setup>
 import { ref } from 'vue'
 
+// URL API — работает и локально, и на Render
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 const searchPhone = ref('')
 const searchVk = ref('')
 const orders = ref([])
@@ -142,7 +145,7 @@ async function searchOrders() {
     if (searchPhone.value) params.append('phone', searchPhone.value)
     if (searchVk.value) params.append('vk', searchVk.value)
     
-    const response = await fetch(`/api/orders/client/?${params}`)
+    const response = await fetch(`${API_URL}/api/orders/client/?${params}`)
     const data = await response.json()
     
     if (data.success) {

@@ -275,6 +275,9 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 
+// URL API — работает и локально, и на Render
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 const step = ref(1)
 const submitting = ref(false)
 const successMessage = ref('')
@@ -315,7 +318,6 @@ const minDate = computed(() => {
   return tomorrow.toISOString().split('T')[0]
 })
 
-// Валидация шагов
 const step1Valid = computed(() => {
   return form.vk_link.trim() && form.phone.trim() && form.get_type
 })
@@ -328,7 +330,6 @@ const step3Valid = computed(() => {
   return form.has_material
 })
 
-// Калькулятор
 const basePrice = computed(() => {
   if (form.pages <= 0) return 0
   return 500 + (form.pages - 1) * 150
@@ -378,7 +379,6 @@ const handwritingLabel = computed(() => handwritings.find(h => h.value === form.
 function nextStep() { step.value++ }
 function prevStep() { step.value-- }
 
-// Загрузка файла
 function handleFileUpload(event) {
   const file = event.target.files[0]
   if (file && file.size <= 10 * 1024 * 1024) {
@@ -398,21 +398,18 @@ async function submitOrder() {
   successMessage.value = ''
 
   try {
-    // Используем FormData для отправки файла
     const formData = new FormData()
     
-    // Добавляем все поля из формы
     Object.keys(form).forEach(key => {
       formData.append(key, form[key])
     })
     formData.append('estimated_price', calculatedPrice.value)
     
-    // Добавляем файл, если есть
     if (uploadedFile.value) {
       formData.append('uploaded_file', uploadedFile.value)
     }
 
-    const response = await fetch('/api/orders/create/', {
+    const response = await fetch(`${API_URL}/api/orders/create/`, {
       method: 'POST',
       body: formData,
     })
@@ -438,7 +435,6 @@ async function submitOrder() {
   background: #faf9f6;
 }
 
-/* Шапка */
 .order-header {
   display: flex;
   justify-content: space-between;
@@ -489,7 +485,6 @@ async function submitOrder() {
   background: #4a67d9;
 }
 
-/* Контейнер */
 .order-container {
   display: flex;
   max-width: 1200px;
@@ -498,7 +493,6 @@ async function submitOrder() {
   padding: 0 20px;
 }
 
-/* Боковая панель */
 .price-sidebar {
   width: 320px;
   flex-shrink: 0;
@@ -578,7 +572,6 @@ async function submitOrder() {
   margin: 6px 0;
 }
 
-/* Форма */
 .form-area {
   flex: 1;
   background: white;
@@ -682,7 +675,6 @@ label {
   color: #e67e22;
 }
 
-/* Загрузка файла */
 .file-upload {
   display: flex;
   align-items: center;
@@ -732,7 +724,6 @@ label {
   background: #fdd;
 }
 
-/* Радио-карточки */
 .radio-cards, .checkbox-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -774,7 +765,6 @@ label {
   font-weight: 600;
 }
 
-/* Итоговый блок */
 .final-summary {
   background: #f9fafb;
   border-radius: 14px;
@@ -805,7 +795,6 @@ label {
   color: #1a1a2e;
 }
 
-/* Кнопки */
 .btn-row {
   display: flex;
   gap: 16px;
@@ -851,7 +840,6 @@ label {
   background: #219a52;
 }
 
-/* Сообщения */
 .success-message {
   background: #d4edda;
   color: #155724;
