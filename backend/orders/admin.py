@@ -69,6 +69,7 @@ class OrderAdmin(ExportActionMixin, admin.ModelAdmin):
                 'has_drawings',
                 'text_only',
                 'additional_info',
+                'uploaded_file',
             ]
         }),
         ('🚚 Доставка', {
