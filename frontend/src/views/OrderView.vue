@@ -209,6 +209,21 @@
               </label>
             </div>
           </div>
+
+          <!-- ЗАГРУЗКА ФАЙЛА -->
+          <div class="form-group">
+            <label>Исходный материал (файл)</label>
+            <div class="file-upload">
+              <label class="file-label" :class="{ 'has-file': uploadedFile }">
+                <span v-if="!uploadedFile">📎 Прикрепить файл</span>
+                <span v-else>📄 {{ uploadedFile.name }}</span>
+                <input type="file" @change="handleFileUpload" class="file-input" 
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" />
+              </label>
+              <button v-if="uploadedFile" @click="removeFile" class="btn-remove-file" type="button">✕</button>
+            </div>
+            <span class="field-hint">PDF, Word, изображения, текст (до 10 МБ)</span>
+          </div>
           
           <div class="form-group">
             <label>Дополнительная информация</label>
@@ -227,12 +242,19 @@
               <div class="summary-row"><span>Формат:</span><span>{{ formatLabel }}</span></div>
               <div class="summary-row"><span>Почерк:</span><span>{{ handwritingLabel }}</span></div>
               <div class="summary-row"><span>Получение:</span><span>{{ form.get_type === 'pickup' ? 'Заберу сам' : 'Доставка' }}</span></div>
+              <div class="summary-row" v-if="uploadedFile"><span>Файл:</span><span>{{ uploadedFile.name }}</span></div>
               <div class="summary-row total-row"><span>Итого:</span><span>{{ calculatedPrice }} ₽</span></div>
             </div>
           </div>
           
+          <!-- Сообщения об успехе/ошибке -->
           <div v-if="successMessage" class="success-message">
-            <span>✅</span> {{ successMessage }}
+            <span>✅</span> 
+            <div>
+              {{ successMessage }}
+              <br>
+              <router-link to="/client" class="client-link">Отслеживать статус заявки →</router-link>
+            </div>
           </div>
           <div v-if="errorMessage" class="error-message">
             <span>❌</span> {{ errorMessage }}
@@ -257,6 +279,7 @@ const step = ref(1)
 const submitting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
+const uploadedFile = ref(null)
 
 const form = reactive({
   vk_link: '',
@@ -355,19 +378,43 @@ const handwritingLabel = computed(() => handwritings.find(h => h.value === form.
 function nextStep() { step.value++ }
 function prevStep() { step.value-- }
 
+// Загрузка файла
+function handleFileUpload(event) {
+  const file = event.target.files[0]
+  if (file && file.size <= 10 * 1024 * 1024) {
+    uploadedFile.value = file
+  } else if (file) {
+    alert('Файл слишком большой. Максимальный размер — 10 МБ.')
+  }
+}
+
+function removeFile() {
+  uploadedFile.value = null
+}
+
 async function submitOrder() {
   submitting.value = true
   errorMessage.value = ''
   successMessage.value = ''
 
   try {
+    // Используем FormData для отправки файла
+    const formData = new FormData()
+    
+    // Добавляем все поля из формы
+    Object.keys(form).forEach(key => {
+      formData.append(key, form[key])
+    })
+    formData.append('estimated_price', calculatedPrice.value)
+    
+    // Добавляем файл, если есть
+    if (uploadedFile.value) {
+      formData.append('uploaded_file', uploadedFile.value)
+    }
+
     const response = await fetch('/api/orders/create/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        estimated_price: calculatedPrice.value,
-      })
+      body: formData,
     })
     
     const data = await response.json()
@@ -588,6 +635,7 @@ label {
   transition: border 0.3s, box-shadow 0.3s;
   background: #fafafa;
   font-family: inherit;
+  box-sizing: border-box;
 }
 .input:focus, .textarea:focus {
   border-color: #4a67d9;
@@ -632,6 +680,56 @@ label {
 .urgency-tag.warm {
   background: #fff3e0;
   color: #e67e22;
+}
+
+/* Загрузка файла */
+.file-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.file-label {
+  display: inline-block;
+  padding: 14px 24px;
+  background: #f0f4ff;
+  border: 2px dashed #b0c4f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+  color: #4a67d9;
+  text-align: center;
+  flex: 1;
+}
+.file-label:hover {
+  background: #e0eaff;
+  border-color: #4a67d9;
+}
+.file-label.has-file {
+  background: #eafaf1;
+  border-color: #27ae60;
+  border-style: solid;
+  color: #155724;
+}
+.file-input {
+  display: none;
+}
+.btn-remove-file {
+  background: #ffeaea;
+  color: #c0392b;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+.btn-remove-file:hover {
+  background: #fdd;
 }
 
 /* Радио-карточки */
@@ -761,7 +859,7 @@ label {
   border-radius: 12px;
   margin-top: 20px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   font-weight: 500;
 }
@@ -775,6 +873,15 @@ label {
   align-items: center;
   gap: 10px;
   font-weight: 500;
+}
+.client-link {
+  color: #155724;
+  font-weight: 700;
+  margin-top: 4px;
+  display: inline-block;
+}
+.client-link:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 900px) {

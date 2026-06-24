@@ -7,6 +7,7 @@
         <a href="#how-it-works">Как это работает</a>
         <a href="#pricing">Стоимость</a>
         <a href="#faq">Вопросы</a>
+        <a href="#" @click.prevent="$router.push('/client')" class="nav-client">Мои заявки</a>
       </nav>
     </header>
 
@@ -238,6 +239,10 @@ html {
 }
 .nav a:hover {
   color: #4a67d9;
+}
+.nav-client {
+  color: #4a67d9 !important;
+  font-weight: 600;
 }
 
 /* Герой */

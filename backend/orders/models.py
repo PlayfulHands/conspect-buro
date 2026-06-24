@@ -44,6 +44,12 @@ class Order(models.Model):
     estimated_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ориентировочная цена")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     is_processed = models.BooleanField(default=False, verbose_name="Обработана")
+    uploaded_file = models.FileField(
+        upload_to='orders/%Y/%m/',
+        verbose_name="Файл с исходным материалом",
+        blank=True,
+        null=True
+    )
 
     class Meta:
         verbose_name = "Заявка"
