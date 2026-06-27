@@ -29,6 +29,11 @@ const router = createRouter({
       name: 'privacy',
       component: () => import('../views/Privacy.vue')
     },
+    {
+      path: '/payment',
+      name: 'payment',
+      component: () => import('../views/PaymentView.vue')
+    },
   ]
 })
 

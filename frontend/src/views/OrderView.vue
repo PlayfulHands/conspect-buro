@@ -12,7 +12,6 @@
     </header>
 
     <div class="order-container">
-      <!-- Боковая панель с ценой -->
       <aside class="price-sidebar">
         <div class="price-card">
           <div class="price-label">Итоговая стоимость</div>
@@ -64,7 +63,6 @@
         </details>
       </aside>
 
-      <!-- Форма -->
       <main class="form-area">
         <!-- Шаг 1 -->
         <div v-if="step === 1" class="form-step">
@@ -255,21 +253,6 @@
             <p class="delivery-note">🚚 Доставка 69 ₽ включена | ✅ Тетради и канцелярия включены</p>
           </div>
           
-          <div v-if="successMessage" class="success-message">
-            <span>✅</span> 
-            <div>
-              <strong>Спасибо за ваш заказ!</strong><br>
-              {{ successMessage }}
-              <br><br>
-              ⏰ График работы: Пн–Вс с 10:00 до 23:00.<br>
-              Если вы оформили заказ в вечернее или ночное время — мы напишем вам утром.<br><br>
-              Пожалуйста, убедитесь, что личные сообщения в VK открыты.
-              <br><br>
-              <router-link to="/" class="client-link">← Вернуться на главную</router-link>
-              &nbsp;|&nbsp;
-              <a href="https://vk.com/konspektps" target="_blank" class="client-link">Группа VK →</a>
-            </div>
-          </div>
           <div v-if="errorMessage" class="error-message">
             <span>❌</span> {{ errorMessage }}
           </div>
@@ -277,7 +260,7 @@
           <div class="btn-row">
             <button class="btn-secondary" @click="prevStep">← Назад</button>
             <button class="btn-primary btn-submit" @click="submitOrder" :disabled="submitting || !step3Valid">
-              {{ submitting ? 'Отправка...' : 'Отправить заявку' }}
+              {{ submitting ? 'Отправка...' : 'Перейти к оплате' }}
             </button>
           </div>
         </div>
@@ -288,12 +271,13 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const step = ref(1)
 const submitting = ref(false)
-const successMessage = ref('')
 const errorMessage = ref('')
 const uploadedFiles = ref([])
 
@@ -341,61 +325,17 @@ const minDate = computed(() => {
   return tomorrow.toISOString().split('T')[0]
 })
 
-const step1Valid = computed(() => {
-  return form.vk_link.trim() && form.phone.trim() && form.delivery_address.trim()
-})
+const step1Valid = computed(() => form.vk_link.trim() && form.phone.trim() && form.delivery_address.trim())
+const step2Valid = computed(() => form.material_type && form.pages > 0 && form.pages <= 200 && form.deadline && form.paper_format && form.handwriting)
+const step3Valid = computed(() => uploadedFiles.value.length > 0 && form.agree_offer && form.agree_data && form.agree_vk_open && form.agree_files_quality)
 
-const step2Valid = computed(() => {
-  return form.material_type && form.pages > 0 && form.pages <= 200 && form.deadline && form.paper_format && form.handwriting
-})
-
-const step3Valid = computed(() => {
-  return uploadedFiles.value.length > 0 && form.agree_offer && form.agree_data && form.agree_vk_open && form.agree_files_quality
-})
-
-// Калькулятор
-const basePrice = computed(() => {
-  if (form.pages <= 0) return 0
-  return form.pages * 40
-})
-
-const materialTypeMultiplier = computed(() => {
-  const m = { 'document': 1, 'presentation': 1.2, 'handwritten_photo': 1.5 }
-  return m[form.material_type] || 1
-})
-
-const handwritingMultiplier = computed(() => {
-  const m = { 'any': 1, 'readable': 1.2, 'individual': 1.5 }
-  return m[form.handwriting] || 1
-})
-
-const urgencyDays = computed(() => {
-  if (!form.deadline) return 999
-  return Math.ceil((new Date(form.deadline) - new Date()) / (1000 * 60 * 60 * 24))
-})
-
-const urgencyMultiplier = computed(() => {
-  if (urgencyDays.value <= 2) return 2
-  if (urgencyDays.value <= 5) return 1.5
-  return 1
-})
-
-const extrasTotal = computed(() => {
-  let total = 0
-  if (form.has_tables) total += 30
-  if (form.has_schemes) total += 50
-  if (form.has_drawings) total += 70
-  return total
-})
-
-const calculatedPrice = computed(() => {
-  let price = basePrice.value
-  price = price * materialTypeMultiplier.value
-  price = price * handwritingMultiplier.value
-  price = price * urgencyMultiplier.value
-  price = Math.round(price + extrasTotal.value + 69)
-  return price
-})
+const basePrice = computed(() => form.pages <= 0 ? 0 : form.pages * 40)
+const materialTypeMultiplier = computed(() => ({ 'document': 1, 'presentation': 1.2, 'handwritten_photo': 1.5 })[form.material_type] || 1)
+const handwritingMultiplier = computed(() => ({ 'any': 1, 'readable': 1.2, 'individual': 1.5 })[form.handwriting] || 1)
+const urgencyDays = computed(() => form.deadline ? Math.ceil((new Date(form.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : 999)
+const urgencyMultiplier = computed(() => urgencyDays.value <= 2 ? 2 : urgencyDays.value <= 5 ? 1.5 : 1)
+const extrasTotal = computed(() => (form.has_tables ? 30 : 0) + (form.has_schemes ? 50 : 0) + (form.has_drawings ? 70 : 0))
+const calculatedPrice = computed(() => Math.round(basePrice.value * materialTypeMultiplier.value * handwritingMultiplier.value * urgencyMultiplier.value + extrasTotal.value + 69))
 
 const materialTypeLabel = computed(() => materialTypes.find(m => m.value === form.material_type)?.label || '')
 const formatLabel = computed(() => formats.find(f => f.value === form.paper_format)?.label || '')
@@ -407,34 +347,27 @@ function prevStep() { step.value-- }
 function handleFileUpload(event) {
   const files = Array.from(event.target.files)
   const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024)
-  if (validFiles.length < files.length) {
-    alert('Некоторые файлы больше 10 МБ и не были добавлены.')
-  }
+  if (validFiles.length < files.length) alert('Некоторые файлы больше 10 МБ и не были добавлены.')
   uploadedFiles.value = [...uploadedFiles.value, ...validFiles]
 }
 
-function removeFiles() {
-  uploadedFiles.value = []
-}
+function removeFiles() { uploadedFiles.value = [] }
 
 async function submitOrder() {
   submitting.value = true
   errorMessage.value = ''
-  successMessage.value = ''
 
   try {
     const formData = new FormData()
     
     Object.keys(form).forEach(key => {
-      if (key !== 'agree_offer' && key !== 'agree_data' && key !== 'agree_vk_open' && key !== 'agree_files_quality') {
+      if (!['agree_offer', 'agree_data', 'agree_vk_open', 'agree_files_quality'].includes(key)) {
         formData.append(key, form[key])
       }
     })
     formData.append('estimated_price', calculatedPrice.value)
     
-    uploadedFiles.value.forEach(file => {
-      formData.append('uploaded_files', file)
-    })
+    uploadedFiles.value.forEach(file => formData.append('uploaded_files', file))
 
     const response = await fetch(`${API_URL}/api/orders/create/`, {
       method: 'POST',
@@ -444,7 +377,7 @@ async function submitOrder() {
     const data = await response.json()
     
     if (response.ok) {
-      successMessage.value = data.message || 'Ваша заявка успешно принята в работу. В ближайшее время мы свяжемся с вами в VK.'
+      router.push({ path: '/payment', query: { orderId: data.order_id, price: calculatedPrice.value } })
     } else {
       errorMessage.value = 'Ошибка: ' + JSON.stringify(data.errors || data)
     }
@@ -457,489 +390,86 @@ async function submitOrder() {
 </script>
 
 <style scoped>
-.order-page {
-  min-height: 100vh;
-  background: #faf9f6;
-}
-
-.order-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-  background: white;
-  border-bottom: 1px solid #eee;
-}
-.logo {
-  font-size: 16px;
-  font-weight: 600;
-  color: #4a67d9;
-  cursor: pointer;
-}
-.steps-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-.step-dot {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  background: #eee;
-  color: #999;
-  transition: all 0.3s;
-}
-.step-dot.active {
-  background: #4a67d9;
-  color: white;
-}
-.step-dot.completed {
-  background: #d4edda;
-  color: #155724;
-}
-.step-line {
-  width: 40px;
-  height: 2px;
-  background: #eee;
-  transition: background 0.3s;
-}
-.step-line.active {
-  background: #4a67d9;
-}
-
-.order-container {
-  display: flex;
-  max-width: 1200px;
-  margin: 40px auto;
-  gap: 30px;
-  padding: 0 20px;
-}
-
-.price-sidebar {
-  width: 320px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 100px;
-  align-self: flex-start;
-}
-.price-card {
-  background: white;
-  border-radius: 16px;
-  padding: 30px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
-  text-align: center;
-  margin-bottom: 16px;
-}
-.price-label {
-  font-size: 14px;
-  color: #999;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.price-value {
-  font-size: 42px;
-  font-weight: 800;
-  color: #1a1a2e;
-  margin-bottom: 12px;
-}
-.price-includes {
-  text-align: left;
-  font-size: 13px;
-  color: #27ae60;
-  margin-bottom: 12px;
-}
-.price-includes p {
-  margin: 4px 0;
-}
-.price-breakdown {
-  text-align: left;
-  border-top: 1px solid #eee;
-  padding-top: 16px;
-}
-.breakdown-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  color: #666;
-  padding: 4px 0;
-}
-.breakdown-item.urgency {
-  color: #e67e22;
-}
-.urgency-warning {
-  background: #fff3cd;
-  color: #856404;
-  padding: 10px;
-  border-radius: 8px;
-  margin-top: 16px;
-  font-size: 14px;
-  font-weight: 600;
-}
-.price-hint {
-  color: #bbb;
-  font-size: 14px;
-  margin-top: 16px;
-}
-.pricing-info {
-  background: white;
-  border-radius: 16px;
-  padding: 16px 20px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
-  cursor: pointer;
-}
-.pricing-info summary {
-  font-size: 14px;
-  color: #4a67d9;
-  font-weight: 600;
-  list-style: none;
-}
-.pricing-info-content {
-  margin-top: 12px;
-  font-size: 13px;
-  color: #666;
-}
-.pricing-info-content p {
-  margin: 6px 0;
-}
-
-.form-area {
-  flex: 1;
-  background: white;
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
-}
-.form-step {
-  animation: fadeIn 0.3s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.step-badge {
-  display: inline-block;
-  background: #f0f4ff;
-  color: #4a67d9;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 16px;
-}
-h2 {
-  font-size: 28px;
-  margin-bottom: 8px;
-  color: #1a1a2e;
-}
-.step-desc {
-  color: #888;
-  margin-bottom: 30px;
-  font-size: 15px;
-}
-.form-group {
-  margin-bottom: 24px;
-}
-label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  font-size: 15px;
-  color: #333;
-}
-.required {
-  color: #e74c3c;
-}
-.input, .textarea {
-  width: 100%;
-  padding: 14px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  font-size: 16px;
-  transition: border 0.3s, box-shadow 0.3s;
-  background: #fafafa;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-.input:focus, .textarea:focus {
-  border-color: #4a67d9;
-  box-shadow: 0 0 0 3px rgba(74, 103, 217, 0.1);
-  background: white;
-  outline: none;
-}
-.input-with-suffix {
-  display: flex;
-  align-items: center;
-}
-.input-with-suffix .input {
-  border-radius: 12px 0 0 12px;
-}
-.suffix {
-  background: #eee;
-  padding: 14px 16px;
-  border-radius: 0 12px 12px 0;
-  color: #666;
-  font-weight: 600;
-}
-.field-hint {
-  display: block;
-  margin-top: 6px;
-  font-size: 13px;
-  color: #aaa;
-}
-.urgency-info {
-  margin-top: 8px;
-}
-.urgency-tag {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-}
-.urgency-tag.hot {
-  background: #ffeaea;
-  color: #c0392b;
-}
-.urgency-tag.warm {
-  background: #fff3e0;
-  color: #e67e22;
-}
-
-.file-upload {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.file-label {
-  display: inline-block;
-  padding: 14px 24px;
-  background: #f0f4ff;
-  border: 2px dashed #b0c4f0;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-weight: 500;
-  color: #4a67d9;
-  text-align: center;
-  flex: 1;
-}
-.file-label:hover {
-  background: #e0eaff;
-  border-color: #4a67d9;
-}
-.file-label.has-file {
-  background: #eafaf1;
-  border-color: #27ae60;
-  border-style: solid;
-  color: #155724;
-}
-.file-input {
-  display: none;
-}
-.btn-remove-file {
-  background: #ffeaea;
-  color: #c0392b;
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-remove-file:hover {
-  background: #fdd;
-}
-
-.radio-cards, .checkbox-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-}
-.radio-card, .checkbox-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 14px;
-  cursor: pointer;
-  transition: all 0.3s;
-  text-align: center;
-}
-.radio-card:hover, .checkbox-card:hover {
-  border-color: #b0c4f0;
-}
-.radio-card.selected, .checkbox-card.checked {
-  border-color: #4a67d9;
-  background: #f0f4ff;
-}
-.radio-card input, .checkbox-card input {
-  display: none;
-}
-.radio-icon, .checkbox-icon {
-  font-size: 28px;
-}
-.radio-title, .checkbox-title {
-  font-weight: 600;
-  font-size: 14px;
-  color: #333;
-}
-.radio-price, .checkbox-price {
-  font-size: 13px;
-  color: #4a67d9;
-  font-weight: 600;
-}
-
-.checkboxes-required {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.checkbox-required {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-weight: normal !important;
-  cursor: pointer;
-  font-size: 14px;
-}
-.checkbox-required input {
-  margin-top: 3px;
-  min-width: 18px;
-  height: 18px;
-}
-.checkbox-required a {
-  color: #4a67d9;
-  text-decoration: underline;
-}
-
-.final-summary {
-  background: #f9fafb;
-  border-radius: 14px;
-  padding: 24px;
-  margin: 24px 0;
-}
-.final-summary h3 {
-  margin-bottom: 16px;
-  color: #1a1a2e;
-}
-.summary-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 15px;
-  color: #555;
-}
-.summary-row.total-row {
-  border-top: 1px solid #ddd;
-  padding-top: 10px;
-  margin-top: 4px;
-  font-weight: 700;
-  font-size: 18px;
-  color: #1a1a2e;
-}
-.delivery-note {
-  text-align: center;
-  color: #27ae60;
-  font-size: 13px;
-  margin-top: 12px;
-}
-
-.btn-row {
-  display: flex;
-  gap: 16px;
-  margin-top: 30px;
-}
-.btn-primary {
-  flex: 1;
-  padding: 16px 28px;
-  background: #4a67d9;
-  color: white;
-  border: none;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-.btn-primary:hover:not(:disabled) {
-  background: #3a54c0;
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.btn-secondary {
-  padding: 16px 28px;
-  background: #f0f0f0;
-  color: #555;
-  border: none;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-submit {
-  background: #27ae60;
-}
-.btn-submit:hover:not(:disabled) {
-  background: #219a52;
-}
-
-.success-message {
-  background: #d4edda;
-  color: #155724;
-  padding: 20px;
-  border-radius: 12px;
-  margin-top: 20px;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  font-size: 14px;
-  line-height: 1.6;
-}
-.error-message {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 16px 20px;
-  border-radius: 12px;
-  margin-top: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.client-link {
-  color: #155724;
-  font-weight: 700;
-}
-.client-link:hover {
-  text-decoration: underline;
-}
-
+.order-page { min-height: 100vh; background: #faf9f6; }
+.order-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; background: white; border-bottom: 1px solid #eee; }
+.logo { font-size: 16px; font-weight: 600; color: #4a67d9; cursor: pointer; }
+.steps-indicator { display: flex; align-items: center; gap: 0; }
+.step-dot { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; background: #eee; color: #999; transition: all 0.3s; }
+.step-dot.active { background: #4a67d9; color: white; }
+.step-dot.completed { background: #d4edda; color: #155724; }
+.step-line { width: 40px; height: 2px; background: #eee; transition: background 0.3s; }
+.step-line.active { background: #4a67d9; }
+.order-container { display: flex; max-width: 1200px; margin: 40px auto; gap: 30px; padding: 0 20px; }
+.price-sidebar { width: 320px; flex-shrink: 0; position: sticky; top: 100px; align-self: flex-start; }
+.price-card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 2px 16px rgba(0,0,0,0.06); text-align: center; margin-bottom: 16px; }
+.price-label { font-size: 14px; color: #999; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+.price-value { font-size: 42px; font-weight: 800; color: #1a1a2e; margin-bottom: 12px; }
+.price-includes { text-align: left; font-size: 13px; color: #27ae60; margin-bottom: 12px; }
+.price-includes p { margin: 4px 0; }
+.price-breakdown { text-align: left; border-top: 1px solid #eee; padding-top: 16px; }
+.breakdown-item { display: flex; justify-content: space-between; font-size: 14px; color: #666; padding: 4px 0; }
+.breakdown-item.urgency { color: #e67e22; }
+.urgency-warning { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; margin-top: 16px; font-size: 14px; font-weight: 600; }
+.price-hint { color: #bbb; font-size: 14px; margin-top: 16px; }
+.pricing-info { background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 2px 16px rgba(0,0,0,0.06); cursor: pointer; }
+.pricing-info summary { font-size: 14px; color: #4a67d9; font-weight: 600; list-style: none; }
+.pricing-info-content { margin-top: 12px; font-size: 13px; color: #666; }
+.pricing-info-content p { margin: 6px 0; }
+.form-area { flex: 1; background: white; border-radius: 20px; padding: 40px; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+.form-step { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.step-badge { display: inline-block; background: #f0f4ff; color: #4a67d9; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+h2 { font-size: 28px; margin-bottom: 8px; color: #1a1a2e; }
+.step-desc { color: #888; margin-bottom: 30px; font-size: 15px; }
+.form-group { margin-bottom: 24px; }
+label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 15px; color: #333; }
+.required { color: #e74c3c; }
+.input, .textarea { width: 100%; padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; transition: border 0.3s, box-shadow 0.3s; background: #fafafa; font-family: inherit; box-sizing: border-box; }
+.input:focus, .textarea:focus { border-color: #4a67d9; box-shadow: 0 0 0 3px rgba(74, 103, 217, 0.1); background: white; outline: none; }
+.input-with-suffix { display: flex; align-items: center; }
+.input-with-suffix .input { border-radius: 12px 0 0 12px; }
+.suffix { background: #eee; padding: 14px 16px; border-radius: 0 12px 12px 0; color: #666; font-weight: 600; }
+.field-hint { display: block; margin-top: 6px; font-size: 13px; color: #aaa; }
+.urgency-info { margin-top: 8px; }
+.urgency-tag { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+.urgency-tag.hot { background: #ffeaea; color: #c0392b; }
+.urgency-tag.warm { background: #fff3e0; color: #e67e22; }
+.file-upload { display: flex; align-items: center; gap: 12px; }
+.file-label { display: inline-block; padding: 14px 24px; background: #f0f4ff; border: 2px dashed #b0c4f0; border-radius: 12px; cursor: pointer; transition: all 0.3s; font-weight: 500; color: #4a67d9; text-align: center; flex: 1; }
+.file-label:hover { background: #e0eaff; border-color: #4a67d9; }
+.file-label.has-file { background: #eafaf1; border-color: #27ae60; border-style: solid; color: #155724; }
+.file-input { display: none; }
+.btn-remove-file { background: #ffeaea; color: #c0392b; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.btn-remove-file:hover { background: #fdd; }
+.radio-cards, .checkbox-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.radio-card, .checkbox-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 12px; border: 2px solid #e0e0e0; border-radius: 14px; cursor: pointer; transition: all 0.3s; text-align: center; }
+.radio-card:hover, .checkbox-card:hover { border-color: #b0c4f0; }
+.radio-card.selected, .checkbox-card.checked { border-color: #4a67d9; background: #f0f4ff; }
+.radio-card input, .checkbox-card input { display: none; }
+.radio-icon, .checkbox-icon { font-size: 28px; }
+.radio-title, .checkbox-title { font-weight: 600; font-size: 14px; color: #333; }
+.radio-price, .checkbox-price { font-size: 13px; color: #4a67d9; font-weight: 600; }
+.checkboxes-required { display: flex; flex-direction: column; gap: 14px; }
+.checkbox-required { display: flex; align-items: flex-start; gap: 10px; font-weight: normal !important; cursor: pointer; font-size: 14px; }
+.checkbox-required input { margin-top: 3px; min-width: 18px; height: 18px; }
+.checkbox-required a { color: #4a67d9; text-decoration: underline; }
+.final-summary { background: #f9fafb; border-radius: 14px; padding: 24px; margin: 24px 0; }
+.final-summary h3 { margin-bottom: 16px; color: #1a1a2e; }
+.summary-list { display: flex; flex-direction: column; gap: 8px; }
+.summary-row { display: flex; justify-content: space-between; font-size: 15px; color: #555; }
+.summary-row.total-row { border-top: 1px solid #ddd; padding-top: 10px; margin-top: 4px; font-weight: 700; font-size: 18px; color: #1a1a2e; }
+.delivery-note { text-align: center; color: #27ae60; font-size: 13px; margin-top: 12px; }
+.btn-row { display: flex; gap: 16px; margin-top: 30px; }
+.btn-primary { flex: 1; padding: 16px 28px; background: #4a67d9; color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+.btn-primary:hover:not(:disabled) { background: #3a54c0; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { padding: 16px 28px; background: #f0f0f0; color: #555; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; }
+.btn-submit { background: #27ae60; }
+.btn-submit:hover:not(:disabled) { background: #219a52; }
+.error-message { background: #f8d7da; color: #721c24; padding: 16px 20px; border-radius: 12px; margin-top: 20px; display: flex; align-items: center; gap: 10px; }
 @media (max-width: 900px) {
-  .order-container {
-    flex-direction: column;
-  }
-  .price-sidebar {
-    width: 100%;
-    position: static;
-  }
-  .form-area {
-    padding: 24px;
-  }
+  .order-container { flex-direction: column; }
+  .price-sidebar { width: 100%; position: static; }
+  .form-area { padding: 24px; }
 }
 </style>
