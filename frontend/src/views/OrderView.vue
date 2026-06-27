@@ -1,6 +1,5 @@
 <template>
   <div class="order-page">
-    <!-- Шапка -->
     <header class="order-header">
       <div class="logo" @click="$router.push('/')">← На главную</div>
       <div class="steps-indicator">
@@ -13,19 +12,23 @@
     </header>
 
     <div class="order-container">
-      <!-- Боковая панель с ценой (видна всегда) -->
+      <!-- Боковая панель с ценой -->
       <aside class="price-sidebar">
         <div class="price-card">
-          <div class="price-label">Ориентировочная стоимость</div>
+          <div class="price-label">Итоговая стоимость</div>
           <div class="price-value">{{ calculatedPrice }} ₽</div>
+          <div class="price-includes" v-if="step >= 2">
+            <p>✅ Всё включено: тетради, канцелярия</p>
+            <p>🚚 Доставка включена (69 ₽)</p>
+          </div>
           <div class="price-breakdown" v-if="step >= 2">
             <div class="breakdown-item" v-if="basePrice > 0">
               <span>Базовая цена ({{ form.pages }} стр.)</span>
               <span>{{ basePrice }} ₽</span>
             </div>
-            <div class="breakdown-item" v-if="form.paper_format !== 'A4_tetrad'">
-              <span>Формат ({{ formatLabel }})</span>
-              <span>×{{ formatMultiplier }}</span>
+            <div class="breakdown-item" v-if="form.material_type !== 'document'">
+              <span>Тип материала ({{ materialTypeLabel }})</span>
+              <span>×{{ materialTypeMultiplier }}</span>
             </div>
             <div class="breakdown-item" v-if="form.handwriting !== 'any'">
               <span>Почерк ({{ handwritingLabel }})</span>
@@ -44,19 +47,19 @@
             ⚡ Срочный заказ — цена увеличена
           </div>
           <div class="price-hint" v-if="step < 2">
-            Заполните параметры работы для расчёта
+            Заполните параметры для расчёта
           </div>
         </div>
         
-        <!-- Блок "Как считается цена" -->
         <details class="pricing-info">
           <summary>Как рассчитывается стоимость?</summary>
           <div class="pricing-info-content">
-            <p><strong>Объём:</strong> 500 ₽ за первую стр. + 150 ₽ за каждую следующую</p>
-            <p><strong>Формат:</strong> А4×1, А5×0.8, Лист×0.6</p>
-            <p><strong>Почерк:</strong> обычный×1, разборчивый×1.2, индив.×1.5</p>
-            <p><strong>Сроки:</strong> 4+ дн×1, 2-3 дн×1.5, 1 дн×2</p>
-            <p><strong>Элементы:</strong> таблицы/схемы +150 ₽, рисунки +200 ₽</p>
+            <p><strong>Объём:</strong> 40 ₽ за страницу</p>
+            <p><strong>Тип материала:</strong> док-т×1, презентация×1.2, фото×1.5</p>
+            <p><strong>Почерк:</strong> стандарт×1, разборчивый×1.2, индив.×1.5</p>
+            <p><strong>Сроки:</strong> 6+ дн×1, 3-5 дн×1.5, 2 дн×2</p>
+            <p><strong>Элементы:</strong> таблицы +30₽, схемы +50₽, рисунки +70₽</p>
+            <p>🚚 Доставка 69 ₽ включена</p>
           </div>
         </details>
       </aside>
@@ -66,8 +69,8 @@
         <!-- Шаг 1 -->
         <div v-if="step === 1" class="form-step">
           <span class="step-badge">Шаг 1 из 3</span>
-          <h2>Контакты и основа</h2>
-          <p class="step-desc">Оставьте свои данные для связи. Мы не передаём их третьим лицам.</p>
+          <h2>Контакты</h2>
+          <p class="step-desc">Оставьте данные для связи. Мы не передаём их третьим лицам.</p>
           
           <div class="form-group">
             <label>Ссылка ВКонтакте <span class="required">*</span></label>
@@ -79,25 +82,15 @@
             <label>Номер телефона <span class="required">*</span></label>
             <input v-model="form.phone" type="tel" placeholder="+7 (999) 123-45-67" class="input" />
           </div>
-          
+
           <div class="form-group">
-            <label>Способ получения <span class="required">*</span></label>
-            <div class="radio-cards">
-              <label class="radio-card" :class="{ selected: form.get_type === 'pickup' }">
-                <input type="radio" v-model="form.get_type" value="pickup" />
-                <span class="radio-icon">🤝</span>
-                <span class="radio-title">Заберу сам</span>
-              </label>
-              <label class="radio-card" :class="{ selected: form.get_type === 'delivery' }">
-                <input type="radio" v-model="form.get_type" value="delivery" />
-                <span class="radio-icon">📦</span>
-                <span class="radio-title">Нужна доставка</span>
-              </label>
-            </div>
+            <label>Ближайший ПВЗ Wildberries <span class="required">*</span></label>
+            <input v-model="form.delivery_address" type="text" placeholder="Например: г. Москва, ул. Тверская, 1" class="input" />
+            <span class="field-hint">Доставка 69 ₽ уже включена в стоимость</span>
           </div>
           
           <button class="btn-primary" @click="nextStep" :disabled="!step1Valid">
-            Далее → Параметры работы
+            Далее → Параметры
           </button>
         </div>
 
@@ -105,23 +98,35 @@
         <div v-if="step === 2" class="form-step">
           <span class="step-badge">Шаг 2 из 3</span>
           <h2>Параметры работы</h2>
-          <p class="step-desc">От этих параметров зависит итоговая стоимость. Слева вы видите, как меняется цена.</p>
+          <p class="step-desc">От этих параметров зависит стоимость. Слева видно, как меняется цена.</p>
           
           <div class="form-group">
-            <label>Объём работы (количество страниц) <span class="required">*</span></label>
+            <label>Тип вашего материала <span class="required">*</span></label>
+            <div class="radio-cards">
+              <label class="radio-card" v-for="mt in materialTypes" :key="mt.value"
+                :class="{ selected: form.material_type === mt.value }">
+                <input type="radio" v-model="form.material_type" :value="mt.value" />
+                <span class="radio-icon">{{ mt.icon }}</span>
+                <span class="radio-title">{{ mt.label }}</span>
+                <span class="radio-price">{{ mt.priceLabel }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Объём работы (страниц) <span class="required">*</span></label>
             <div class="input-with-suffix">
               <input v-model.number="form.pages" type="number" min="1" max="200" class="input" placeholder="10" />
               <span class="suffix">стр.</span>
             </div>
-            <span class="field-hint">От 1 до 200 страниц</span>
           </div>
           
           <div class="form-group">
             <label>Срок сдачи <span class="required">*</span></label>
             <input v-model="form.deadline" type="date" class="input" :min="minDate" />
             <div class="urgency-info" v-if="urgencyMultiplier > 1">
-              <span v-if="urgencyMultiplier >= 2" class="urgency-tag hot">⚡ Срочно! ×2 к цене</span>
-              <span v-else class="urgency-tag warm">🔥 Ускоренно ×1.5 к цене</span>
+              <span v-if="urgencyMultiplier >= 2" class="urgency-tag hot">⚡ Срочно! ×2</span>
+              <span v-else class="urgency-tag warm">🔥 Ускоренно ×1.5</span>
             </div>
           </div>
           
@@ -133,7 +138,6 @@
                 <input type="radio" v-model="form.paper_format" :value="fmt.value" />
                 <span class="radio-icon">{{ fmt.icon }}</span>
                 <span class="radio-title">{{ fmt.label }}</span>
-                <span class="radio-price">{{ fmt.priceLabel }}</span>
               </label>
             </div>
           </div>
@@ -165,21 +169,19 @@
           <h2>Детали и подтверждение</h2>
           
           <div class="form-group">
-            <label>Наличие исходного материала <span class="required">*</span></label>
-            <div class="radio-cards">
-              <label class="radio-card" :class="{ selected: form.has_material === 'yes' }">
-                <input type="radio" v-model="form.has_material" value="yes" />
-                <span class="radio-icon">✅</span>
-                <span class="radio-title">Есть готовый</span>
+            <label>Прикрепить материалы <span class="required">*</span></label>
+            <div class="file-upload">
+              <label class="file-label" :class="{ 'has-file': uploadedFiles.length }">
+                <span v-if="!uploadedFiles.length">📎 Прикрепить файлы</span>
+                <span v-else>📄 {{ uploadedFiles.length }} файл(ов)</span>
+                <input type="file" @change="handleFileUpload" class="file-input" 
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple />
               </label>
-              <label class="radio-card" :class="{ selected: form.has_material === 'soon' }">
-                <input type="radio" v-model="form.has_material" value="soon" />
-                <span class="radio-icon">⏳</span>
-                <span class="radio-title">Скоро появится</span>
-              </label>
+              <button v-if="uploadedFiles.length" @click="removeFiles" class="btn-remove-file" type="button">✕</button>
             </div>
+            <span class="field-hint">PDF, Word, фото, текст (до 10 МБ каждый)</span>
           </div>
-          
+
           <div class="form-group">
             <label>Дополнительные элементы</label>
             <div class="checkbox-cards">
@@ -187,19 +189,19 @@
                 <input type="checkbox" v-model="form.has_tables" />
                 <span class="checkbox-icon">📊</span>
                 <span>Таблицы</span>
-                <span class="checkbox-price">+150 ₽</span>
+                <span class="checkbox-price">+30 ₽</span>
               </label>
               <label class="checkbox-card" :class="{ checked: form.has_schemes }">
                 <input type="checkbox" v-model="form.has_schemes" />
                 <span class="checkbox-icon">📐</span>
                 <span>Схемы</span>
-                <span class="checkbox-price">+150 ₽</span>
+                <span class="checkbox-price">+50 ₽</span>
               </label>
               <label class="checkbox-card" :class="{ checked: form.has_drawings }">
                 <input type="checkbox" v-model="form.has_drawings" />
                 <span class="checkbox-icon">🎨</span>
                 <span>Рисунки</span>
-                <span class="checkbox-price">+200 ₽</span>
+                <span class="checkbox-price">+70 ₽</span>
               </label>
               <label class="checkbox-card" :class="{ checked: form.text_only }">
                 <input type="checkbox" v-model="form.text_only" />
@@ -209,26 +211,31 @@
               </label>
             </div>
           </div>
-
-          <!-- ЗАГРУЗКА ФАЙЛА -->
-          <div class="form-group">
-            <label>Исходный материал (файл)</label>
-            <div class="file-upload">
-              <label class="file-label" :class="{ 'has-file': uploadedFile }">
-                <span v-if="!uploadedFile">📎 Прикрепить файл</span>
-                <span v-else>📄 {{ uploadedFile.name }}</span>
-                <input type="file" @change="handleFileUpload" class="file-input" 
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" />
-              </label>
-              <button v-if="uploadedFile" @click="removeFile" class="btn-remove-file" type="button">✕</button>
-            </div>
-            <span class="field-hint">PDF, Word, изображения, текст (до 10 МБ)</span>
-          </div>
           
           <div class="form-group">
             <label>Дополнительная информация</label>
-            <textarea v-model="form.additional_info" rows="4" class="textarea" 
-              placeholder="Особые требования к оформлению, почерку и т.д. Если их нет, поставьте точку"></textarea>
+            <textarea v-model="form.additional_info" rows="3" class="textarea" 
+              placeholder="Особые требования. Если их нет, поставьте точку"></textarea>
+          </div>
+
+          <!-- Галочки -->
+          <div class="form-group checkboxes-required">
+            <label class="checkbox-required">
+              <input type="checkbox" v-model="form.agree_offer" />
+              <span>Я ознакомился с <router-link to="/offer" target="_blank">Публичной офертой</router-link>, <router-link to="/privacy" target="_blank">Политикой конфиденциальности</router-link> и согласен с условиями обработки данных <span class="required">*</span></span>
+            </label>
+            <label class="checkbox-required">
+              <input type="checkbox" v-model="form.agree_data" />
+              <span>Подтверждаю, что указанные мной данные (объем, параметры заказа) верны <span class="required">*</span></span>
+            </label>
+            <label class="checkbox-required">
+              <input type="checkbox" v-model="form.agree_vk_open" />
+              <span>Подтверждаю, что мои личные сообщения в VK открыты для связи, либо я напишу первым(-ой) для уточнения деталей заказа <span class="required">*</span></span>
+            </label>
+            <label class="checkbox-required">
+              <input type="checkbox" v-model="form.agree_files_quality" />
+              <span>Подтверждаю, что загруженные материалы чёткие и разборчивые для работы <span class="required">*</span></span>
+            </label>
           </div>
 
           <!-- Итоговый блок -->
@@ -237,23 +244,30 @@
             <div class="summary-list">
               <div class="summary-row"><span>ВК:</span><span>{{ form.vk_link || '—' }}</span></div>
               <div class="summary-row"><span>Телефон:</span><span>{{ form.phone || '—' }}</span></div>
+              <div class="summary-row"><span>ПВЗ:</span><span>{{ form.delivery_address || '—' }}</span></div>
+              <div class="summary-row"><span>Тип материала:</span><span>{{ materialTypeLabel }}</span></div>
               <div class="summary-row"><span>Объём:</span><span>{{ form.pages }} стр.</span></div>
               <div class="summary-row"><span>Срок:</span><span>{{ form.deadline || '—' }}</span></div>
               <div class="summary-row"><span>Формат:</span><span>{{ formatLabel }}</span></div>
               <div class="summary-row"><span>Почерк:</span><span>{{ handwritingLabel }}</span></div>
-              <div class="summary-row"><span>Получение:</span><span>{{ form.get_type === 'pickup' ? 'Заберу сам' : 'Доставка' }}</span></div>
-              <div class="summary-row" v-if="uploadedFile"><span>Файл:</span><span>{{ uploadedFile.name }}</span></div>
-              <div class="summary-row total-row"><span>Итого:</span><span>{{ calculatedPrice }} ₽</span></div>
+              <div class="summary-row total-row"><span>Итого (с доставкой):</span><span>{{ calculatedPrice }} ₽</span></div>
             </div>
+            <p class="delivery-note">🚚 Доставка 69 ₽ включена | ✅ Тетради и канцелярия включены</p>
           </div>
           
-          <!-- Сообщения об успехе/ошибке -->
           <div v-if="successMessage" class="success-message">
             <span>✅</span> 
             <div>
+              <strong>Спасибо за ваш заказ!</strong><br>
               {{ successMessage }}
-              <br>
-              <router-link to="/client" class="client-link">Отслеживать статус заявки →</router-link>
+              <br><br>
+              ⏰ График работы: Пн–Вс с 10:00 до 23:00.<br>
+              Если вы оформили заказ в вечернее или ночное время — мы напишем вам утром.<br><br>
+              Пожалуйста, убедитесь, что личные сообщения в VK открыты.
+              <br><br>
+              <router-link to="/" class="client-link">← Вернуться на главную</router-link>
+              &nbsp;|&nbsp;
+              <a href="https://vk.com/konspektps" target="_blank" class="client-link">Группа VK →</a>
             </div>
           </div>
           <div v-if="errorMessage" class="error-message">
@@ -275,69 +289,79 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 
-// URL API — работает и локально, и на Render
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const step = ref(1)
 const submitting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
-const uploadedFile = ref(null)
+const uploadedFiles = ref([])
 
 const form = reactive({
   vk_link: '',
   phone: '',
+  delivery_address: '',
+  material_type: 'document',
   pages: 10,
   deadline: '',
   paper_format: 'A4_tetrad',
   handwriting: 'any',
-  has_material: 'yes',
   has_tables: false,
   has_schemes: false,
   has_drawings: false,
   text_only: false,
   additional_info: '.',
-  get_type: 'pickup',
+  get_type: 'delivery',
+  agree_offer: false,
+  agree_data: false,
+  agree_vk_open: false,
+  agree_files_quality: false,
 })
 
+const materialTypes = [
+  { value: 'document', label: 'Электронный документ', icon: '📄', priceLabel: '×1' },
+  { value: 'presentation', label: 'Презентация', icon: '📊', priceLabel: '×1.2' },
+  { value: 'handwritten_photo', label: 'Фото рукописного конспекта', icon: '📸', priceLabel: '×1.5' },
+]
+
 const formats = [
-  { value: 'A4_tetrad', label: 'Тетрадь А4', icon: '📒', priceLabel: '×1' },
-  { value: 'A5_tetrad', label: 'Тетрадь А5', icon: '📔', priceLabel: '×0.8' },
-  { value: 'A4_list', label: 'Лист А4', icon: '📄', priceLabel: '×0.6' },
+  { value: 'A4_tetrad', label: 'Тетрадь А4', icon: '📒' },
+  { value: 'A5_tetrad', label: 'Тетрадь А5', icon: '📔' },
 ]
 
 const handwritings = [
-  { value: 'any', label: 'Не имеет значения', icon: '✍️', priceLabel: '×1' },
+  { value: 'any', label: 'Стандарт', icon: '✍️', priceLabel: '×1' },
   { value: 'readable', label: 'Разборчивый', icon: '✨', priceLabel: '×1.2' },
   { value: 'individual', label: 'Индивидуальный подбор', icon: '🎯', priceLabel: '×1.5' },
 ]
 
 const minDate = computed(() => {
   const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setDate(tomorrow.getDate() + 2)
   return tomorrow.toISOString().split('T')[0]
 })
 
 const step1Valid = computed(() => {
-  return form.vk_link.trim() && form.phone.trim() && form.get_type
+  return form.vk_link.trim() && form.phone.trim() && form.delivery_address.trim()
 })
 
 const step2Valid = computed(() => {
-  return form.pages > 0 && form.pages <= 200 && form.deadline && form.paper_format && form.handwriting
+  return form.material_type && form.pages > 0 && form.pages <= 200 && form.deadline && form.paper_format && form.handwriting
 })
 
 const step3Valid = computed(() => {
-  return form.has_material
+  return uploadedFiles.value.length > 0 && form.agree_offer && form.agree_data && form.agree_vk_open && form.agree_files_quality
 })
 
+// Калькулятор
 const basePrice = computed(() => {
   if (form.pages <= 0) return 0
-  return 500 + (form.pages - 1) * 150
+  return form.pages * 40
 })
 
-const formatMultiplier = computed(() => {
-  const m = { 'A4_tetrad': 1, 'A5_tetrad': 0.8, 'A4_list': 0.6 }
-  return m[form.paper_format] || 1
+const materialTypeMultiplier = computed(() => {
+  const m = { 'document': 1, 'presentation': 1.2, 'handwritten_photo': 1.5 }
+  return m[form.material_type] || 1
 })
 
 const handwritingMultiplier = computed(() => {
@@ -351,28 +375,29 @@ const urgencyDays = computed(() => {
 })
 
 const urgencyMultiplier = computed(() => {
-  if (urgencyDays.value <= 1) return 2
-  if (urgencyDays.value <= 3) return 1.5
+  if (urgencyDays.value <= 2) return 2
+  if (urgencyDays.value <= 5) return 1.5
   return 1
 })
 
 const extrasTotal = computed(() => {
   let total = 0
-  if (form.has_tables) total += 150
-  if (form.has_schemes) total += 150
-  if (form.has_drawings) total += 200
+  if (form.has_tables) total += 30
+  if (form.has_schemes) total += 50
+  if (form.has_drawings) total += 70
   return total
 })
 
 const calculatedPrice = computed(() => {
   let price = basePrice.value
-  price = price * formatMultiplier.value
+  price = price * materialTypeMultiplier.value
   price = price * handwritingMultiplier.value
   price = price * urgencyMultiplier.value
-  price = Math.round(price + extrasTotal.value)
+  price = Math.round(price + extrasTotal.value + 69)
   return price
 })
 
+const materialTypeLabel = computed(() => materialTypes.find(m => m.value === form.material_type)?.label || '')
 const formatLabel = computed(() => formats.find(f => f.value === form.paper_format)?.label || '')
 const handwritingLabel = computed(() => handwritings.find(h => h.value === form.handwriting)?.label || '')
 
@@ -380,16 +405,16 @@ function nextStep() { step.value++ }
 function prevStep() { step.value-- }
 
 function handleFileUpload(event) {
-  const file = event.target.files[0]
-  if (file && file.size <= 10 * 1024 * 1024) {
-    uploadedFile.value = file
-  } else if (file) {
-    alert('Файл слишком большой. Максимальный размер — 10 МБ.')
+  const files = Array.from(event.target.files)
+  const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024)
+  if (validFiles.length < files.length) {
+    alert('Некоторые файлы больше 10 МБ и не были добавлены.')
   }
+  uploadedFiles.value = [...uploadedFiles.value, ...validFiles]
 }
 
-function removeFile() {
-  uploadedFile.value = null
+function removeFiles() {
+  uploadedFiles.value = []
 }
 
 async function submitOrder() {
@@ -401,13 +426,15 @@ async function submitOrder() {
     const formData = new FormData()
     
     Object.keys(form).forEach(key => {
-      formData.append(key, form[key])
+      if (key !== 'agree_offer' && key !== 'agree_data' && key !== 'agree_vk_open' && key !== 'agree_files_quality') {
+        formData.append(key, form[key])
+      }
     })
     formData.append('estimated_price', calculatedPrice.value)
     
-    if (uploadedFile.value) {
-      formData.append('uploaded_file', uploadedFile.value)
-    }
+    uploadedFiles.value.forEach(file => {
+      formData.append('uploaded_files', file)
+    })
 
     const response = await fetch(`${API_URL}/api/orders/create/`, {
       method: 'POST',
@@ -417,12 +444,12 @@ async function submitOrder() {
     const data = await response.json()
     
     if (response.ok) {
-      successMessage.value = data.message || 'Заявка успешно отправлена! Мы свяжемся с вами в ближайшее время.'
+      successMessage.value = data.message || 'Ваша заявка успешно принята в работу. В ближайшее время мы свяжемся с вами в VK.'
     } else {
       errorMessage.value = 'Ошибка: ' + JSON.stringify(data.errors || data)
     }
   } catch (e) {
-    errorMessage.value = 'Не удалось отправить заявку. Проверьте соединение с сервером.'
+    errorMessage.value = 'Не удалось отправить заявку.'
   } finally {
     submitting.value = false
   }
@@ -519,7 +546,16 @@ async function submitOrder() {
   font-size: 42px;
   font-weight: 800;
   color: #1a1a2e;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+}
+.price-includes {
+  text-align: left;
+  font-size: 13px;
+  color: #27ae60;
+  margin-bottom: 12px;
+}
+.price-includes p {
+  margin: 4px 0;
 }
 .price-breakdown {
   text-align: left;
@@ -718,7 +754,6 @@ label {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s;
 }
 .btn-remove-file:hover {
   background: #fdd;
@@ -765,6 +800,29 @@ label {
   font-weight: 600;
 }
 
+.checkboxes-required {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.checkbox-required {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: normal !important;
+  cursor: pointer;
+  font-size: 14px;
+}
+.checkbox-required input {
+  margin-top: 3px;
+  min-width: 18px;
+  height: 18px;
+}
+.checkbox-required a {
+  color: #4a67d9;
+  text-decoration: underline;
+}
+
 .final-summary {
   background: #f9fafb;
   border-radius: 14px;
@@ -794,6 +852,12 @@ label {
   font-size: 18px;
   color: #1a1a2e;
 }
+.delivery-note {
+  text-align: center;
+  color: #27ae60;
+  font-size: 13px;
+  margin-top: 12px;
+}
 
 .btn-row {
   display: flex;
@@ -814,7 +878,6 @@ label {
 }
 .btn-primary:hover:not(:disabled) {
   background: #3a54c0;
-  transform: translateY(-1px);
 }
 .btn-primary:disabled {
   opacity: 0.5;
@@ -830,9 +893,6 @@ label {
   font-weight: 600;
   cursor: pointer;
 }
-.btn-secondary:hover {
-  background: #e0e0e0;
-}
 .btn-submit {
   background: #27ae60;
 }
@@ -843,13 +903,14 @@ label {
 .success-message {
   background: #d4edda;
   color: #155724;
-  padding: 16px 20px;
+  padding: 20px;
   border-radius: 12px;
   margin-top: 20px;
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.6;
 }
 .error-message {
   background: #f8d7da;
@@ -860,13 +921,10 @@ label {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 500;
 }
 .client-link {
   color: #155724;
   font-weight: 700;
-  margin-top: 4px;
-  display: inline-block;
 }
 .client-link:hover {
   text-decoration: underline;
@@ -875,24 +933,13 @@ label {
 @media (max-width: 900px) {
   .order-container {
     flex-direction: column;
-    margin: 20px auto;
   }
   .price-sidebar {
     width: 100%;
     position: static;
-    order: -1;
-  }
-  .price-value {
-    font-size: 32px;
   }
   .form-area {
     padding: 24px;
-  }
-  .radio-cards {
-    grid-template-columns: 1fr 1fr;
-  }
-  .checkbox-cards {
-    grid-template-columns: 1fr 1fr;
   }
 }
 </style>

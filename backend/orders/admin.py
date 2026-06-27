@@ -29,7 +29,7 @@ class OrderAdmin(ExportActionMixin, admin.ModelAdmin):
         'paper_format',
         'handwriting',
         'get_type',
-        'has_material',
+        'material_type',
         ('deadline', admin.DateFieldListFilter),
         ('created_at', admin.DateFieldListFilter),
     ]
