@@ -13,15 +13,10 @@
 
         <h2>Для завершения заказа переведите оплату</h2>
 
-        <!-- QR-код с номером телефона -->
+        <!-- QR-код СБП -->
         <div class="qr-section">
-          <p class="qr-hint">Отсканируйте QR-код через приложение вашего банка</p>
-          <img 
-            :src="qrDataUrl" 
-            alt="QR-код для оплаты" 
-            class="qr-image"
-          />
-          <p class="qr-subhint">QR-код содержит номер телефона для перевода</p>
+          <p class="qr-hint">Наведите камеру телефона или откройте приложение банка</p>
+          <img :src="qrUrl" alt="QR-код для оплаты" class="qr-image" />
         </div>
 
         <div class="divider">
@@ -41,21 +36,20 @@
 
         <!-- Инструкция -->
         <div class="instruction">
-          <h3>⚠️ Важно</h3>
-          <p>При переводе обязательно укажите в комментарии:</p>
+          <h3>⚠️ Важно при переводе</h3>
+          <p>В комментарии к платежу укажите:</p>
           <div class="comment-box">
             <code>Заказ №{{ orderId }}</code>
           </div>
-          <p>И сумму: <strong>{{ price }} ₽</strong></p>
-          <p class="instruction-hint">Это нужно, чтобы мы могли идентифицировать ваш платёж.</p>
+          <p>Сумма к оплате: <strong>{{ price }} ₽</strong></p>
         </div>
 
         <!-- Что дальше -->
         <div class="next-steps">
           <h3>Что дальше?</h3>
-          <p>✅ После поступления оплаты мы свяжемся с вами в VK.</p>
-          <p>⏰ График работы: Пн–Вс с 10:00 до 23:00.</p>
-          <p>💬 Убедитесь, что личные сообщения в VK открыты.</p>
+          <p>✅ После оплаты мы свяжемся с вами в VK.</p>
+          <p>⏰ Работаем: Пн–Вс с 10:00 до 23:00.</p>
+          <p>💬 Откройте личные сообщения в VK.</p>
         </div>
 
         <div class="btn-row">
@@ -75,8 +69,9 @@ const route = useRoute()
 const orderId = ref(route.query.orderId || '—')
 const price = ref(route.query.price || '0')
 
-// QR-код просто с номером телефона (чистые цифры)
-const qrDataUrl = ref('https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=89965697285')
+// СБП ссылка: перевод по номеру телефона
+const sbpLink = `https://qr.nspk.ru/transfer?phone=89965697285&amount=${price.value}&comment=Заказ+№${orderId.value}`
+const qrUrl = ref(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(sbpLink)}`)
 
 function copyPhone() {
   navigator.clipboard.writeText('89965697285').then(() => {
@@ -98,8 +93,7 @@ function copyPhone() {
 h2 { font-size: 22px; margin-bottom: 24px; }
 .qr-section { margin-bottom: 24px; }
 .qr-hint { color: #888; margin-bottom: 16px; font-size: 14px; }
-.qr-image { display: inline-block; padding: 16px; background: white; border: 2px solid #eee; border-radius: 12px; }
-.qr-subhint { color: #aaa; font-size: 12px; margin-top: 8px; }
+.qr-image { display: inline-block; padding: 16px; background: white; border: 2px solid #eee; border-radius: 12px; max-width: 280px; }
 .divider { text-align: center; margin: 24px 0; color: #ccc; position: relative; }
 .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: #eee; }
 .divider::before { left: 0; } .divider::after { right: 0; }
@@ -114,7 +108,7 @@ h2 { font-size: 22px; margin-bottom: 24px; }
 .instruction { background: #fff3cd; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: left; }
 .instruction h3 { margin-bottom: 12px; }
 .comment-box { background: white; padding: 12px; border-radius: 8px; margin: 10px 0; text-align: center; }
-.comment-box code { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.comment-box code { font-size: 18px; font-weight: 700; }
 .instruction-hint { font-size: 13px; color: #856404; margin-top: 8px; }
 .next-steps { background: #eafaf1; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: left; }
 .next-steps h3 { margin-bottom: 12px; }
