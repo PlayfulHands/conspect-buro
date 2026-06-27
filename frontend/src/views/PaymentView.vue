@@ -13,16 +13,16 @@
 
         <h2>Для завершения заказа переведите оплату</h2>
 
-        <!-- QR-код -->
+        <!-- QR-код с номером телефона -->
         <div class="qr-section">
-          <p class="qr-hint">Отсканируйте QR-код камерой телефона или через приложение банка</p>
+          <p class="qr-hint">Отсканируйте QR-код через приложение вашего банка</p>
           <img 
             :src="qrDataUrl" 
             alt="QR-код для оплаты" 
             class="qr-image"
             v-if="qrDataUrl"
           />
-          <p v-else class="qr-loading">Загрузка QR-кода...</p>
+          <p class="qr-subhint">QR-код содержит номер телефона для перевода</p>
         </div>
 
         <div class="divider">
@@ -33,26 +33,28 @@
         <div class="manual-section">
           <h3>Переведите вручную</h3>
           <div class="phone-box">
-            <span class="phone-label">Номер для перевода</span>
+            <span class="phone-label">По номеру телефона</span>
             <span class="phone-number">8 999 656-97-28</span>
             <button class="copy-btn" @click="copyPhone">📋 Скопировать</button>
           </div>
+          <p class="bank-hint">Сбербанк, Т-Банк, ВТБ, Альфа-Банк и другие</p>
         </div>
 
         <!-- Инструкция -->
         <div class="instruction">
           <h3>⚠️ Важно</h3>
-          <p>При переводе обязательно укажите в комментарии к платежу:</p>
+          <p>При переводе обязательно укажите в комментарии:</p>
           <div class="comment-box">
             <code>Заказ №{{ orderId }}</code>
           </div>
-          <p class="instruction-hint">Это нужно, чтобы мы могли идентифицировать ваш платёж и начать работу над заказом.</p>
+          <p>И сумму: <strong>{{ price }} ₽</strong></p>
+          <p class="instruction-hint">Это нужно, чтобы мы могли идентифицировать ваш платёж.</p>
         </div>
 
         <!-- Что дальше -->
         <div class="next-steps">
           <h3>Что дальше?</h3>
-          <p>✅ После поступления оплаты мы свяжемся с вами в VK для подтверждения заказа.</p>
+          <p>✅ После поступления оплаты мы свяжемся с вами в VK.</p>
           <p>⏰ График работы: Пн–Вс с 10:00 до 23:00.</p>
           <p>💬 Убедитесь, что личные сообщения в VK открыты.</p>
         </div>
@@ -67,19 +69,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const orderId = ref(route.query.orderId || '—')
 const price = ref(route.query.price || '0')
-const qrDataUrl = ref('')
 
-onMounted(async () => {
-  const text = `ST00012|Name=Конспект Бюро|PersonalAcc=89965697285|BankName=СБЕРБАНК|Sum=${price.value * 100}|Purpose=Заказ №${orderId.value}`
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(text)}`
-  qrDataUrl.value = qrUrl
-})
+// QR-код просто с номером телефона — банк сам распознает
+const qrDataUrl = ref(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('89965697285')}`)
 
 function copyPhone() {
   navigator.clipboard.writeText('89965697285').then(() => {
@@ -101,8 +99,8 @@ function copyPhone() {
 h2 { font-size: 22px; margin-bottom: 24px; }
 .qr-section { margin-bottom: 24px; }
 .qr-hint { color: #888; margin-bottom: 16px; font-size: 14px; }
-.qr-image { display: inline-block; padding: 16px; background: white; border: 2px solid #eee; border-radius: 12px; max-width: 260px; }
-.qr-loading { color: #999; padding: 40px; }
+.qr-image { display: inline-block; padding: 16px; background: white; border: 2px solid #eee; border-radius: 12px; }
+.qr-subhint { color: #aaa; font-size: 12px; margin-top: 8px; }
 .divider { text-align: center; margin: 24px 0; color: #ccc; position: relative; }
 .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: #eee; }
 .divider::before { left: 0; } .divider::after { right: 0; }
@@ -113,6 +111,7 @@ h2 { font-size: 22px; margin-bottom: 24px; }
 .phone-label { font-size: 13px; color: #888; width: 100%; }
 .phone-number { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
 .copy-btn { background: #f0f0f0; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.bank-hint { font-size: 12px; color: #999; margin-top: 8px; }
 .instruction { background: #fff3cd; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: left; }
 .instruction h3 { margin-bottom: 12px; }
 .comment-box { background: white; padding: 12px; border-radius: 8px; margin: 10px 0; text-align: center; }
