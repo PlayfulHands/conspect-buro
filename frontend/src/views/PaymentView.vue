@@ -20,7 +20,6 @@
             :src="qrDataUrl" 
             alt="QR-код для оплаты" 
             class="qr-image"
-            v-if="qrDataUrl"
           />
           <p class="qr-subhint">QR-код содержит номер телефона для перевода</p>
         </div>
@@ -76,8 +75,8 @@ const route = useRoute()
 const orderId = ref(route.query.orderId || '—')
 const price = ref(route.query.price || '0')
 
-// QR-код просто с номером телефона — банк сам распознает
-const qrDataUrl = ref(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent('89965697285')}`)
+// QR-код просто с номером телефона (чистые цифры)
+const qrDataUrl = ref('https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=89965697285')
 
 function copyPhone() {
   navigator.clipboard.writeText('89965697285').then(() => {
