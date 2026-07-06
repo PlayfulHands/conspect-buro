@@ -33,7 +33,7 @@
               <span>Почерк ({{ handwritingLabel }})</span>
               <span>×{{ handwritingMultiplier }}</span>
             </div>
-            <div class="breakdown-item urgency" v-if="urgencyMultiplier > 1">
+            <div class="breakdown-item urgency" v-if="urgencyMultiplier !== 1">
               <span>Срочность ({{ urgencyDays }} дн.)</span>
               <span>×{{ urgencyMultiplier }}</span>
             </div>
@@ -42,7 +42,7 @@
               <span>+{{ extrasTotal }} ₽</span>
             </div>
           </div>
-          <div class="urgency-warning" v-if="urgencyMultiplier >= 2">
+          <div class="urgency-warning" v-if="urgencyMultiplier >= 1.5">
             ⚡ Срочный заказ — цена увеличена
           </div>
           <div class="price-hint" v-if="step < 2">
@@ -55,8 +55,8 @@
           <div class="pricing-info-content">
             <p><strong>Объём:</strong> 40 ₽ за страницу</p>
             <p><strong>Тип материала:</strong> док-т×1, презентация×1.2, фото×1.5</p>
-            <p><strong>Почерк:</strong> стандарт×1, разборчивый×1.2, индив.×1.5</p>
-            <p><strong>Сроки:</strong> 6+ дн×1, 3-5 дн×1.5, 2 дн×2</p>
+            <p><strong>Почерк:</strong> стандарт×1, разборчивый×1.2, индив.×1.8</p>
+            <p><strong>Сроки:</strong> 6+ дн×0.9, 3-5 дн×1.2, 2 дн×1.5</p>
             <p><strong>Элементы:</strong> таблицы +30₽, схемы +50₽, рисунки +70₽</p>
             <p>🚚 Доставка 69 ₽ включена</p>
           </div>
@@ -123,8 +123,11 @@
             <label>Срок сдачи <span class="required">*</span></label>
             <input v-model="form.deadline" type="date" class="input" :min="minDate" />
             <div class="urgency-info" v-if="urgencyMultiplier > 1">
-              <span v-if="urgencyMultiplier >= 2" class="urgency-tag hot">⚡ Срочно! ×2</span>
-              <span v-else class="urgency-tag warm">🔥 Ускоренно ×1.5</span>
+              <span v-if="urgencyMultiplier >= 1.5" class="urgency-tag hot">⚡ Срочно! ×1.5</span>
+              <span v-else class="urgency-tag warm">🔥 Ускоренно ×1.2</span>
+            </div>
+            <div class="urgency-info" v-if="urgencyMultiplier < 1">
+              <span class="urgency-tag cool">❄️ Со скидкой ×0.9</span>
             </div>
           </div>
           
@@ -216,7 +219,6 @@
               placeholder="Особые требования. Если их нет, поставьте точку"></textarea>
           </div>
 
-          <!-- Галочки -->
           <div class="form-group checkboxes-required">
             <label class="checkbox-required">
               <input type="checkbox" v-model="form.agree_offer" />
@@ -236,7 +238,6 @@
             </label>
           </div>
 
-          <!-- Итоговый блок -->
           <div class="final-summary">
             <h3>Проверьте заказ</h3>
             <div class="summary-list">
@@ -316,7 +317,7 @@ const formats = [
 const handwritings = [
   { value: 'any', label: 'Стандарт', icon: '✍️', priceLabel: '×1' },
   { value: 'readable', label: 'Разборчивый', icon: '✨', priceLabel: '×1.2' },
-  { value: 'individual', label: 'Индивидуальный подбор', icon: '🎯', priceLabel: '×1.5' },
+  { value: 'individual', label: 'Индивидуальный подбор', icon: '🎯', priceLabel: '×1.8' },
 ]
 
 const minDate = computed(() => {
@@ -329,11 +330,12 @@ const step1Valid = computed(() => form.vk_link.trim() && form.phone.trim() && fo
 const step2Valid = computed(() => form.material_type && form.pages > 0 && form.pages <= 200 && form.deadline && form.paper_format && form.handwriting)
 const step3Valid = computed(() => uploadedFiles.value.length > 0 && form.agree_offer && form.agree_data && form.agree_vk_open && form.agree_files_quality)
 
+// Калькулятор
 const basePrice = computed(() => form.pages <= 0 ? 0 : form.pages * 40)
 const materialTypeMultiplier = computed(() => ({ 'document': 1, 'presentation': 1.2, 'handwritten_photo': 1.5 })[form.material_type] || 1)
-const handwritingMultiplier = computed(() => ({ 'any': 1, 'readable': 1.2, 'individual': 1.5 })[form.handwriting] || 1)
+const handwritingMultiplier = computed(() => ({ 'any': 1, 'readable': 1.2, 'individual': 1.8 })[form.handwriting] || 1)
 const urgencyDays = computed(() => form.deadline ? Math.ceil((new Date(form.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : 999)
-const urgencyMultiplier = computed(() => urgencyDays.value <= 2 ? 2 : urgencyDays.value <= 5 ? 1.5 : 1)
+const urgencyMultiplier = computed(() => urgencyDays.value <= 2 ? 1.5 : urgencyDays.value <= 5 ? 1.2 : 0.9)
 const extrasTotal = computed(() => (form.has_tables ? 30 : 0) + (form.has_schemes ? 50 : 0) + (form.has_drawings ? 70 : 0))
 const calculatedPrice = computed(() => Math.round(basePrice.value * materialTypeMultiplier.value * handwritingMultiplier.value * urgencyMultiplier.value + extrasTotal.value + 69))
 
@@ -434,6 +436,7 @@ label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 15px; c
 .urgency-tag { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
 .urgency-tag.hot { background: #ffeaea; color: #c0392b; }
 .urgency-tag.warm { background: #fff3e0; color: #e67e22; }
+.urgency-tag.cool { background: #e0f0ff; color: #2471a3; }
 .file-upload { display: flex; align-items: center; gap: 12px; }
 .file-label { display: inline-block; padding: 14px 24px; background: #f0f4ff; border: 2px dashed #b0c4f0; border-radius: 12px; cursor: pointer; transition: all 0.3s; font-weight: 500; color: #4a67d9; text-align: center; flex: 1; }
 .file-label:hover { background: #e0eaff; border-color: #4a67d9; }
