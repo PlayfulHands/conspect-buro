@@ -15,12 +15,12 @@
       <aside class="price-sidebar">
         <div class="price-card">
           <div class="price-label">Итоговая стоимость</div>
-          <div class="price-value">{{ calculatedPrice }} ₽</div>
-          <div class="price-includes" v-if="step >= 2">
+          <div class="price-value">{{ calculatedPrice ? calculatedPrice + ' ₽' : '—' }}</div>
+          <div class="price-includes" v-if="step >= 2 && calculatedPrice">
             <p>✅ Всё включено: тетради, канцелярия</p>
             <p>🚚 Доставка включена (69 ₽)</p>
           </div>
-          <div class="price-breakdown" v-if="step >= 2">
+          <div class="price-breakdown" v-if="step >= 2 && calculatedPrice">
             <div class="breakdown-item" v-if="basePrice > 0">
               <span>Базовая цена ({{ form.pages }} стр.)</span>
               <span>{{ basePrice }} ₽</span>
@@ -45,7 +45,7 @@
           <div class="urgency-warning" v-if="urgencyMultiplier >= 1.5">
             ⚡ Срочный заказ — цена увеличена
           </div>
-          <div class="price-hint" v-if="step < 2">
+          <div class="price-hint" v-if="!form.deadline || form.pages <= 0">
             Заполните параметры для расчёта
           </div>
         </div>
@@ -122,11 +122,11 @@
           <div class="form-group">
             <label>Срок сдачи <span class="required">*</span></label>
             <input v-model="form.deadline" type="date" class="input" :min="minDate" />
-            <div class="urgency-info" v-if="urgencyMultiplier > 1">
+            <div class="urgency-info" v-if="form.deadline && urgencyMultiplier > 1">
               <span v-if="urgencyMultiplier >= 1.5" class="urgency-tag hot">⚡ Срочно! ×1.5</span>
               <span v-else class="urgency-tag warm">🔥 Ускоренно ×1.2</span>
             </div>
-            <div class="urgency-info" v-if="urgencyMultiplier < 1">
+            <div class="urgency-info" v-if="form.deadline && urgencyMultiplier < 1">
               <span class="urgency-tag cool">❄️ Со скидкой ×0.9</span>
             </div>
           </div>
@@ -249,7 +249,7 @@
               <div class="summary-row"><span>Срок:</span><span>{{ form.deadline || '—' }}</span></div>
               <div class="summary-row"><span>Формат:</span><span>{{ formatLabel }}</span></div>
               <div class="summary-row"><span>Почерк:</span><span>{{ handwritingLabel }}</span></div>
-              <div class="summary-row total-row"><span>Итого (с доставкой):</span><span>{{ calculatedPrice }} ₽</span></div>
+              <div class="summary-row total-row"><span>Итого (с доставкой):</span><span>{{ calculatedPrice || '—' }} ₽</span></div>
             </div>
             <p class="delivery-note">🚚 Доставка 69 ₽ включена | ✅ Тетради и канцелярия включены</p>
           </div>
@@ -287,7 +287,7 @@ const form = reactive({
   phone: '',
   delivery_address: '',
   material_type: 'document',
-  pages: 10,
+  pages: 1,
   deadline: '',
   paper_format: 'A4_tetrad',
   handwriting: 'any',
@@ -337,7 +337,10 @@ const handwritingMultiplier = computed(() => ({ 'any': 1, 'readable': 1.2, 'indi
 const urgencyDays = computed(() => form.deadline ? Math.ceil((new Date(form.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : 999)
 const urgencyMultiplier = computed(() => urgencyDays.value <= 2 ? 1.5 : urgencyDays.value <= 5 ? 1.2 : 0.9)
 const extrasTotal = computed(() => (form.has_tables ? 30 : 0) + (form.has_schemes ? 50 : 0) + (form.has_drawings ? 70 : 0))
-const calculatedPrice = computed(() => Math.round(basePrice.value * materialTypeMultiplier.value * handwritingMultiplier.value * urgencyMultiplier.value + extrasTotal.value + 69))
+const calculatedPrice = computed(() => {
+  if (!form.deadline || form.pages <= 0) return 0
+  return Math.round(basePrice.value * materialTypeMultiplier.value * handwritingMultiplier.value * urgencyMultiplier.value + extrasTotal.value + 69)
+})
 
 const materialTypeLabel = computed(() => materialTypes.find(m => m.value === form.material_type)?.label || '')
 const formatLabel = computed(() => formats.find(f => f.value === form.paper_format)?.label || '')
