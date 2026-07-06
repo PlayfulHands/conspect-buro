@@ -13,38 +13,29 @@
 
         <h2>Для завершения заказа переведите оплату</h2>
 
-        <!-- QR-код СБП -->
         <div class="qr-section">
-          <p class="qr-hint">Наведите камеру телефона или откройте приложение банка</p>
-          <img :src="qrUrl" alt="QR-код для оплаты" class="qr-image" />
+          <p class="qr-hint">Отсканируйте QR-код через приложение банка</p>
+          <img src="/qr-code.jpg" alt="QR-код для оплаты" class="qr-image" />
         </div>
 
-        <div class="divider">
-          <span>или</span>
-        </div>
+        <div class="divider"><span>или</span></div>
 
-        <!-- Ручной перевод -->
         <div class="manual-section">
           <h3>Переведите вручную</h3>
           <div class="phone-box">
             <span class="phone-label">По номеру телефона</span>
-            <span class="phone-number">8 999 656-97-28</span>
+            <span class="phone-number">8 996 569-72-85</span>
             <button class="copy-btn" @click="copyPhone">📋 Скопировать</button>
           </div>
-          <p class="bank-hint">Сбербанк, Т-Банк, ВТБ, Альфа-Банк и другие</p>
         </div>
 
-        <!-- Инструкция -->
         <div class="instruction">
           <h3>⚠️ Важно при переводе</h3>
-          <p>В комментарии к платежу укажите:</p>
-          <div class="comment-box">
-            <code>Заказ №{{ orderId }}</code>
-          </div>
-          <p>Сумма к оплате: <strong>{{ price }} ₽</strong></p>
+          <p>В комментарии укажите:</p>
+          <div class="comment-box"><code>Заказ №{{ orderId }}</code></div>
+          <p>Сумма: <strong>{{ price }} ₽</strong></p>
         </div>
 
-        <!-- Что дальше -->
         <div class="next-steps">
           <h3>Что дальше?</h3>
           <p>✅ После оплаты мы свяжемся с вами в VK.</p>
@@ -69,16 +60,10 @@ const route = useRoute()
 const orderId = ref(route.query.orderId || '—')
 const price = ref(route.query.price || '0')
 
-// СБП ссылка: перевод по номеру телефона
-const sbpLink = `https://qr.nspk.ru/transfer?phone=89965697285&amount=${price.value}&comment=Заказ+№${orderId.value}`
-const qrUrl = ref(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(sbpLink)}`)
-
 function copyPhone() {
-  navigator.clipboard.writeText('89965697285').then(() => {
-    alert('Номер скопирован!')
-  }).catch(() => {
-    prompt('Скопируйте номер:', '89965697285')
-  })
+  navigator.clipboard.writeText('89965697285')
+    .then(() => alert('Номер скопирован!'))
+    .catch(() => prompt('Скопируйте номер:', '89965697285'))
 }
 </script>
 
@@ -93,23 +78,21 @@ function copyPhone() {
 h2 { font-size: 22px; margin-bottom: 24px; }
 .qr-section { margin-bottom: 24px; }
 .qr-hint { color: #888; margin-bottom: 16px; font-size: 14px; }
-.qr-image { display: inline-block; padding: 16px; background: white; border: 2px solid #eee; border-radius: 12px; max-width: 280px; }
+.qr-image { display: inline-block; padding: 16px; background: white; border: 2px solid #eee; border-radius: 12px; max-width: 250px; }
 .divider { text-align: center; margin: 24px 0; color: #ccc; position: relative; }
 .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: #eee; }
 .divider::before { left: 0; } .divider::after { right: 0; }
 .divider span { background: white; padding: 0 16px; position: relative; }
 .manual-section { margin-bottom: 24px; }
 .manual-section h3 { margin-bottom: 12px; }
-.phone-box { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 16px; background: #faf9f6; border-radius: 12px; }
-.phone-label { font-size: 13px; color: #888; width: 100%; }
-.phone-number { font-size: 22px; font-weight: 700; letter-spacing: 1px; }
-.copy-btn { background: #f0f0f0; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-.bank-hint { font-size: 12px; color: #999; margin-top: 8px; }
+.phone-box { padding: 16px; background: #faf9f6; border-radius: 12px; }
+.phone-label { font-size: 13px; color: #888; display: block; margin-bottom: 4px; }
+.phone-number { font-size: 22px; font-weight: 700; }
+.copy-btn { background: #f0f0f0; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; margin-top: 8px; }
 .instruction { background: #fff3cd; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: left; }
 .instruction h3 { margin-bottom: 12px; }
 .comment-box { background: white; padding: 12px; border-radius: 8px; margin: 10px 0; text-align: center; }
 .comment-box code { font-size: 18px; font-weight: 700; }
-.instruction-hint { font-size: 13px; color: #856404; margin-top: 8px; }
 .next-steps { background: #eafaf1; padding: 20px; border-radius: 12px; margin-bottom: 24px; text-align: left; }
 .next-steps h3 { margin-bottom: 12px; }
 .next-steps p { font-size: 14px; color: #155724; margin: 6px 0; }
@@ -117,8 +100,4 @@ h2 { font-size: 22px; margin-bottom: 24px; }
 .btn-primary, .btn-vk { flex: 1; padding: 16px; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; }
 .btn-primary { background: #f0f0f0; color: #555; }
 .btn-vk { background: #4a67d9; color: white; }
-@media (max-width: 500px) {
-  .payment-card { padding: 20px; }
-  .btn-row { flex-direction: column; }
-}
 </style>
