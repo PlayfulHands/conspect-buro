@@ -7,7 +7,7 @@ from rest_framework import status
 from .models import Order
 from .serializers import OrderSerializer
 
-ADMIN_IDS = [200730036]  # добавь нужные ID через запятую
+ADMIN_IDS = [601403133, 200730036]  # добавь нужные ID через запятую
 
 
 def send_vk_notification(order):
