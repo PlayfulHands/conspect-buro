@@ -377,7 +377,9 @@ async function submitOrder() {
     })
     formData.append('estimated_price', calculatedPrice.value)
 
-    uploadedFiles.value.forEach(file => formData.append('uploaded_files', file))
+    if (uploadedFiles.value.length > 0) {
+      formData.append('uploaded_file', uploadedFiles.value[0])
+    }
 
     const response = await fetch(`${API_URL}/api/orders/create/`, {
       method: 'POST',
