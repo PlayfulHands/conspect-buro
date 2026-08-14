@@ -170,17 +170,10 @@
           <h2>Детали и подтверждение</h2>
 
           <div class="form-group">
-            <label>Прикрепить материалы <span class="required">*</span></label>
-            <div class="file-upload">
-              <label class="file-label" :class="{ 'has-file': uploadedFiles.length }">
-                <span v-if="!uploadedFiles.length">📎 Прикрепить файлы</span>
-                <span v-else>📄 {{ uploadedFiles.length }} файл(ов)</span>
-                <input type="file" @change="handleFileUpload" class="file-input"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple />
-              </label>
-              <button v-if="uploadedFiles.length" @click="removeFiles" class="btn-remove-file" type="button">✕</button>
-            </div>
-            <span class="field-hint">PDF, Word, фото, текст (до 10 МБ каждый)</span>
+            <label>Материалы для конспекта</label>
+            <p class="materials-note">
+              📎 Файлы не нужно прикреплять здесь. После оформления заявки мы свяжемся с вами в VK, и вы отправите материалы в чат.
+            </p>
           </div>
 
           <div class="form-group">
@@ -285,7 +278,6 @@ const step = ref(1)
 const submitting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
-const uploadedFiles = ref([])
 
 const form = reactive({
   vk_link: '',
@@ -333,7 +325,7 @@ const minDate = computed(() => {
 
 const step1Valid = computed(() => form.vk_link.trim() && form.phone.trim() && form.delivery_address.trim())
 const step2Valid = computed(() => form.material_type && form.pages > 0 && form.pages <= 200 && form.deadline && form.paper_format && form.handwriting)
-const step3Valid = computed(() => uploadedFiles.value.length > 0 && form.agree_offer && form.agree_data && form.agree_vk_open && form.agree_files_quality)
+const step3Valid = computed(() => form.agree_offer && form.agree_data && form.agree_vk_open && form.agree_files_quality)
 
 const basePrice = computed(() => form.pages <= 0 ? 0 : form.pages * 40)
 const materialTypeMultiplier = computed(() => ({ 'document': 1, 'presentation': 1.2, 'handwritten_photo': 1.5 })[form.material_type] || 1)
@@ -353,15 +345,6 @@ const handwritingLabel = computed(() => handwritings.find(h => h.value === form.
 function nextStep() { step.value++ }
 function prevStep() { step.value-- }
 
-function handleFileUpload(event) {
-  const files = Array.from(event.target.files)
-  const validFiles = files.filter(f => f.size <= 10 * 1024 * 1024)
-  if (validFiles.length < files.length) alert('Некоторые файлы больше 10 МБ и не были добавлены.')
-  uploadedFiles.value = [...uploadedFiles.value, ...validFiles]
-}
-
-function removeFiles() { uploadedFiles.value = [] }
-
 async function submitOrder() {
   submitting.value = true
   successMessage.value = ''
@@ -376,10 +359,6 @@ async function submitOrder() {
       }
     })
     formData.append('estimated_price', calculatedPrice.value)
-
-    if (uploadedFiles.value.length > 0) {
-      formData.append('uploaded_file', uploadedFiles.value[0])
-    }
 
     const response = await fetch(`${API_URL}/api/orders/create/`, {
       method: 'POST',
@@ -447,13 +426,6 @@ label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 15px; c
 .urgency-tag.hot { background: #ffeaea; color: #c0392b; }
 .urgency-tag.warm { background: #fff3e0; color: #e67e22; }
 .urgency-tag.cool { background: #e0f0ff; color: #2471a3; }
-.file-upload { display: flex; align-items: center; gap: 12px; }
-.file-label { display: inline-block; padding: 14px 24px; background: #f0f4ff; border: 2px dashed #b0c4f0; border-radius: 12px; cursor: pointer; transition: all 0.3s; font-weight: 500; color: #4a67d9; text-align: center; flex: 1; }
-.file-label:hover { background: #e0eaff; border-color: #4a67d9; }
-.file-label.has-file { background: #eafaf1; border-color: #27ae60; border-style: solid; color: #155724; }
-.file-input { display: none; }
-.btn-remove-file { background: #ffeaea; color: #c0392b; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-.btn-remove-file:hover { background: #fdd; }
 .radio-cards, .checkbox-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
 .radio-card, .checkbox-card { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 12px; border: 2px solid #e0e0e0; border-radius: 14px; cursor: pointer; transition: all 0.3s; text-align: center; }
 .radio-card:hover, .checkbox-card:hover { border-color: #b0c4f0; }
@@ -472,6 +444,7 @@ label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 15px; c
 .summary-row { display: flex; justify-content: space-between; font-size: 15px; color: #555; }
 .summary-row.total-row { border-top: 1px solid #ddd; padding-top: 10px; margin-top: 4px; font-weight: 700; font-size: 18px; color: #1a1a2e; }
 .delivery-note { text-align: center; color: #27ae60; font-size: 13px; margin-top: 12px; }
+.materials-note { background: #fff8e1; border: 1px solid #ffe082; padding: 14px 16px; border-radius: 12px; font-size: 14px; color: #6d4c00; }
 .btn-row { display: flex; gap: 16px; margin-top: 30px; }
 .btn-primary { flex: 1; padding: 16px 28px; background: #4a67d9; color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
 .btn-primary:hover:not(:disabled) { background: #3a54c0; }
