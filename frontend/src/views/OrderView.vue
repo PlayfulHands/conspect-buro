@@ -225,10 +225,6 @@
               <input type="checkbox" v-model="form.agree_vk_open" />
               <span>Подтверждаю, что мои личные сообщения в VK открыты для связи, либо я напишу первым(-ой) для уточнения деталей заказа <span class="required">*</span></span>
             </label>
-            <label class="checkbox-required">
-              <input type="checkbox" v-model="form.agree_files_quality" />
-              <span>Подтверждаю, что загруженные материалы чёткие и разборчивые для работы <span class="required">*</span></span>
-            </label>
           </div>
 
           <div class="final-summary">
@@ -297,7 +293,6 @@ const form = reactive({
   agree_offer: false,
   agree_data: false,
   agree_vk_open: false,
-  agree_files_quality: false,
 })
 
 const materialTypes = [
@@ -325,7 +320,7 @@ const minDate = computed(() => {
 
 const step1Valid = computed(() => form.vk_link.trim() && form.phone.trim() && form.delivery_address.trim())
 const step2Valid = computed(() => form.material_type && form.pages > 0 && form.pages <= 200 && form.deadline && form.paper_format && form.handwriting)
-const step3Valid = computed(() => form.agree_offer && form.agree_data && form.agree_vk_open && form.agree_files_quality)
+const step3Valid = computed(() => form.agree_offer && form.agree_data && form.agree_vk_open)
 
 const basePrice = computed(() => form.pages <= 0 ? 0 : form.pages * 40)
 const materialTypeMultiplier = computed(() => ({ 'document': 1, 'presentation': 1.2, 'handwritten_photo': 1.5 })[form.material_type] || 1)
@@ -354,7 +349,7 @@ async function submitOrder() {
     const formData = new FormData()
 
     Object.keys(form).forEach(key => {
-      if (!['agree_offer', 'agree_data', 'agree_vk_open', 'agree_files_quality'].includes(key)) {
+      if (!['agree_offer', 'agree_data', 'agree_vk_open'].includes(key)) {
         formData.append(key, form[key])
       }
     })
