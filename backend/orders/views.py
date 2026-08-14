@@ -7,12 +7,11 @@ from rest_framework import status
 from .models import Order
 from .serializers import OrderSerializer
 
+ADMIN_IDS = [200730036]  # добавь нужные ID через запятую
+
 
 def send_vk_notification(order):
     token = "vk1.a.Xz3iD7bPtAmzJrmUGxkab2g_9MCqcyvDcbEpYRY7u20rsBApho7doTSzZSYbgcauZb61d3QK4CvvV4oEc3F1LCbLEQ3y3aL4WS7UKhbPM8Us6UKznoMY3N5B7QqpywXjhjlnWQbiz6-MTJzT1fgGzo__9k7E40qWGRwQGgDgIsGNjuT-dxJMIYmlhAVu7UJlEVIb1h-990LS-ETxEoeflg"
-    if not token:
-        return
-
     message = (
         f"📥 Новая заявка №{order.id}\n"
         f"👤 ВК: {order.vk_link}\n"
@@ -21,20 +20,21 @@ def send_vk_notification(order):
         f"💰 Сумма: {order.estimated_price} ₽"
     )
 
-    try:
-        requests.post(
-            "https://api.vk.com/method/messages.send",
-            data={
-                "access_token": token,
-                "v": "5.199",
-                "peer_id": 200730036,
-                "message": message,
-                "random_id": 0,
-            },
-            timeout=5,
-        )
-    except Exception as e:
-        print(f"VK notify error: {e}")
+    for user_id in ADMIN_IDS:
+        try:
+            requests.post(
+                "https://api.vk.com/method/messages.send",
+                data={
+                    "access_token": token,
+                    "v": "5.199",
+                    "peer_id": user_id,
+                    "message": message,
+                    "random_id": 0,
+                },
+                timeout=5,
+            )
+        except Exception as e:
+            print(f"VK notify error for {user_id}: {e}")
 
 
 @api_view(['POST'])
