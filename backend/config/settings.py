@@ -144,3 +144,5 @@ REST_FRAMEWORK = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+VK_GROUP_TOKEN = os.environ.get('VK_GROUP_TOKEN', 'vk1.a.Xz3iD7bPtAmzJrmUGxkab2g_9MCqcyvDcbEpYRY7u20rsBApho7doTSzZSYbgcauZb61d3QK4CvvV4oEc3F1LCbLEQ3y3aL4WS7UKhbPM8Us6UKznoMY3N5B7QqpywXjhjlnWQbiz6-MTJzT1fgGzo__9k7E40qWGRwQGgDgIsGNjuT-dxJMIYmlhAVu7UJlEVIb1h-990LS-ETxEoeflg')
