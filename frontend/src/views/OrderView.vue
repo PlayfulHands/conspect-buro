@@ -49,7 +49,7 @@
             Заполните параметры для расчёта
           </div>
         </div>
-        
+
         <details class="pricing-info">
           <summary>Как рассчитывается стоимость?</summary>
           <div class="pricing-info-content">
@@ -69,13 +69,13 @@
           <span class="step-badge">Шаг 1 из 3</span>
           <h2>Контакты</h2>
           <p class="step-desc">Оставьте данные для связи. Мы не передаём их третьим лицам.</p>
-          
+
           <div class="form-group">
             <label>Ссылка ВКонтакте <span class="required">*</span></label>
             <input v-model="form.vk_link" type="url" placeholder="https://vk.com/ваш_профиль" class="input" />
             <span class="field-hint">Нужна для связи с вами</span>
           </div>
-          
+
           <div class="form-group">
             <label>Номер телефона <span class="required">*</span></label>
             <input v-model="form.phone" type="tel" placeholder="+7 (999) 123-45-67" class="input" />
@@ -86,7 +86,7 @@
             <input v-model="form.delivery_address" type="text" placeholder="Например: г. Москва, ул. Тверская, 1" class="input" />
             <span class="field-hint">Доставка 69 ₽ уже включена в стоимость</span>
           </div>
-          
+
           <button class="btn-primary" @click="nextStep" :disabled="!step1Valid">
             Далее → Параметры
           </button>
@@ -97,7 +97,7 @@
           <span class="step-badge">Шаг 2 из 3</span>
           <h2>Параметры работы</h2>
           <p class="step-desc">От этих параметров зависит стоимость. Слева видно, как меняется цена.</p>
-          
+
           <div class="form-group">
             <label>Тип вашего материала <span class="required">*</span></label>
             <div class="radio-cards">
@@ -118,7 +118,7 @@
               <span class="suffix">стр.</span>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Срок сдачи <span class="required">*</span></label>
             <input v-model="form.deadline" type="date" class="input" :min="minDate" />
@@ -130,7 +130,7 @@
               <span class="urgency-tag cool">❄️ Со скидкой ×0.9</span>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Формат <span class="required">*</span></label>
             <div class="radio-cards">
@@ -142,7 +142,7 @@
               </label>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Требования к почерку <span class="required">*</span></label>
             <div class="radio-cards">
@@ -155,7 +155,7 @@
               </label>
             </div>
           </div>
-          
+
           <div class="btn-row">
             <button class="btn-secondary" @click="prevStep">← Назад</button>
             <button class="btn-primary" @click="nextStep" :disabled="!step2Valid">
@@ -168,14 +168,14 @@
         <div v-if="step === 3" class="form-step">
           <span class="step-badge">Шаг 3 из 3</span>
           <h2>Детали и подтверждение</h2>
-          
+
           <div class="form-group">
             <label>Прикрепить материалы <span class="required">*</span></label>
             <div class="file-upload">
               <label class="file-label" :class="{ 'has-file': uploadedFiles.length }">
                 <span v-if="!uploadedFiles.length">📎 Прикрепить файлы</span>
                 <span v-else>📄 {{ uploadedFiles.length }} файл(ов)</span>
-                <input type="file" @change="handleFileUpload" class="file-input" 
+                <input type="file" @change="handleFileUpload" class="file-input"
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple />
               </label>
               <button v-if="uploadedFiles.length" @click="removeFiles" class="btn-remove-file" type="button">✕</button>
@@ -212,10 +212,10 @@
               </label>
             </div>
           </div>
-          
+
           <div class="form-group">
             <label>Дополнительная информация</label>
-            <textarea v-model="form.additional_info" rows="3" class="textarea" 
+            <textarea v-model="form.additional_info" rows="3" class="textarea"
               placeholder="Особые требования. Если их нет, поставьте точку"></textarea>
           </div>
 
@@ -253,15 +253,19 @@
             </div>
             <p class="delivery-note">🚚 Доставка 69 ₽ включена | ✅ Тетради и канцелярия включены</p>
           </div>
-          
+
+          <div v-if="successMessage" class="success-message">
+            <span>✅</span> {{ successMessage }}
+          </div>
+
           <div v-if="errorMessage" class="error-message">
             <span>❌</span> {{ errorMessage }}
           </div>
-          
+
           <div class="btn-row">
             <button class="btn-secondary" @click="prevStep">← Назад</button>
             <button class="btn-primary btn-submit" @click="submitOrder" :disabled="submitting || !step3Valid">
-              {{ submitting ? 'Отправка...' : 'Перейти к оплате' }}
+              {{ submitting ? 'Отправка...' : 'Отправить заявку' }}
             </button>
           </div>
         </div>
@@ -279,6 +283,7 @@ const API_URL = import.meta.env.VITE_API_URL || ''
 
 const step = ref(1)
 const submitting = ref(false)
+const successMessage = ref('')
 const errorMessage = ref('')
 const uploadedFiles = ref([])
 
@@ -330,7 +335,6 @@ const step1Valid = computed(() => form.vk_link.trim() && form.phone.trim() && fo
 const step2Valid = computed(() => form.material_type && form.pages > 0 && form.pages <= 200 && form.deadline && form.paper_format && form.handwriting)
 const step3Valid = computed(() => uploadedFiles.value.length > 0 && form.agree_offer && form.agree_data && form.agree_vk_open && form.agree_files_quality)
 
-// Калькулятор
 const basePrice = computed(() => form.pages <= 0 ? 0 : form.pages * 40)
 const materialTypeMultiplier = computed(() => ({ 'document': 1, 'presentation': 1.2, 'handwritten_photo': 1.5 })[form.material_type] || 1)
 const handwritingMultiplier = computed(() => ({ 'any': 1, 'readable': 1.2, 'individual': 1.8 })[form.handwriting] || 1)
@@ -360,29 +364,30 @@ function removeFiles() { uploadedFiles.value = [] }
 
 async function submitOrder() {
   submitting.value = true
+  successMessage.value = ''
   errorMessage.value = ''
 
   try {
     const formData = new FormData()
-    
+
     Object.keys(form).forEach(key => {
       if (!['agree_offer', 'agree_data', 'agree_vk_open', 'agree_files_quality'].includes(key)) {
         formData.append(key, form[key])
       }
     })
     formData.append('estimated_price', calculatedPrice.value)
-    
+
     uploadedFiles.value.forEach(file => formData.append('uploaded_files', file))
 
     const response = await fetch(`${API_URL}/api/orders/create/`, {
       method: 'POST',
       body: formData,
     })
-    
+
     const data = await response.json()
-    
+
     if (response.ok) {
-      router.push({ path: '/payment', query: { orderId: data.order_id, price: calculatedPrice.value } })
+      successMessage.value = 'Ваша заявка принята! Мы скоро свяжемся с вами в VK.'
     } else {
       errorMessage.value = 'Ошибка: ' + JSON.stringify(data.errors || data)
     }
@@ -472,6 +477,7 @@ label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 15px; c
 .btn-secondary { padding: 16px 28px; background: #f0f0f0; color: #555; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; }
 .btn-submit { background: #27ae60; }
 .btn-submit:hover:not(:disabled) { background: #219a52; }
+.success-message { background: #d4edda; color: #155724; padding: 16px 20px; border-radius: 12px; margin-top: 20px; display: flex; align-items: center; gap: 10px; }
 .error-message { background: #f8d7da; color: #721c24; padding: 16px 20px; border-radius: 12px; margin-top: 20px; display: flex; align-items: center; gap: 10px; }
 @media (max-width: 900px) {
   .order-container { flex-direction: column; }
