@@ -18,7 +18,7 @@ def send_vk_notification(order):
         f"📞 Телефон: {order.phone}\n"
         f"📄 Страниц: {order.pages}\n"
         f"⏰ Дедлайн: {order.deadline.strftime('%d.%m.%Y')}\n"
-        f"💰 Сумма: {order.estimated_price} ₽"
+        f"💰 Сумма: {order.estimated_price} ₽\n"
         f"🔗 Открыть заявку: https://conspect-buro.onrender.com/admin/orders/order/{order.id}/change/"
     )
 
