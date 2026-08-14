@@ -17,7 +17,9 @@ def send_vk_notification(order):
         f"👤 ВК: {order.vk_link}\n"
         f"📞 Телефон: {order.phone}\n"
         f"📄 Страниц: {order.pages}\n"
+        f"⏰ Дедлайн: {order.deadline.strftime('%d.%m.%Y')}\n"
         f"💰 Сумма: {order.estimated_price} ₽"
+        f"🔗 Открыть заявку: https://conspect-buro.onrender.com/admin/orders/order/{order.id}/change/"
     )
 
     for user_id in ADMIN_IDS:
