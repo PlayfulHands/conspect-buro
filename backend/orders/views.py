@@ -27,7 +27,7 @@ def send_vk_notification(order):
             data={
                 "access_token": token,
                 "v": "5.199",
-                "peer_id": 236864312,
+                "peer_id": 200730036,
                 "message": message,
                 "random_id": 0,
             },
